@@ -1,0 +1,74 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  /* Colors: Neon Purple & Deep Blue */
+  --color-primary: #b026ff; /* Neon Purple */
+  --color-primary-hover: #c452ff;
+  --color-bg-dark: #0a0e17; /* Deep Blue background */
+  --color-bg-darker: #05070a;
+  
+  --color-text: #f0f0f0;
+  --color-text-muted: #a0a0a0;
+  
+  --color-success: #00ffaa;
+  --color-warning: #ffaa00;
+  --color-danger: #ff4444;
+
+  /* Typography */
+  --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family);
+  background: var(--color-bg-darker);
+  background-image: 
+    radial-gradient(circle at 15% 50%, rgba(176, 38, 255, 0.15), transparent 25%),
+    radial-gradient(circle at 85% 30%, rgba(0, 170, 255, 0.1), transparent 25%);
+  color: var(--color-text);
+  min-height: 100vh;
+  line-height: 1.5;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  color: #fff;
+}
+
+button {
+  cursor: pointer;
+  font-family: inherit;
+  border: none;
+  outline: none;
+}
+
+input, select {
+  font-family: inherit;
+  outline: none;
+}
+
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+/* Custom Scrollbar for better UI */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}

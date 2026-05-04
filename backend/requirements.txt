@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+sqlalchemy
+sendgrid
+python-dotenv
+pydantic
