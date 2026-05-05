@@ -5,6 +5,8 @@ from pydantic import BaseModel
 from typing import Optional
 import os
 import requests
+from bs4 import BeautifulSoup
+import re
 
 import database
 import email_service
@@ -54,9 +56,38 @@ def create_task(task_data: TaskCreate, background_tasks: BackgroundTasks, db: Se
     # Send confirmation email in background
     background_tasks.add_task(email_service.send_task_created_email, db_task.email, db_task.url)
 
-    # Dynamic venue parsing based on url (Mocking actual NLP/Scraping)
-    is_kaohsiung = "kaohsiung" in task_data.url.lower() or "k-arena" in task_data.url.lower()
-    parsed_venue = "高雄巨蛋" if is_kaohsiung else "台北流行音樂中心"
+    def scrape_venue_from_tixcraft(url: str) -> str:
+        default_venue = "台北流行音樂中心" # Fallback venue
+        try:
+            headers = {'User-Agent': 'Mozilla/5.0'}
+            r = requests.get(url, headers=headers, timeout=5)
+            soup = BeautifulSoup(r.text, 'html.parser')
+            
+            # 尋找 Tixcraft 頁面中的場地資訊
+            # 通常在詳細頁面上會有特定的結構或是字眼
+            for text in soup.stripped_strings:
+                if "高雄巨蛋" in text or "K-Arena" in text:
+                    return "高雄巨蛋"
+                if "台北小巨蛋" in text or "Taipei Arena" in text:
+                    return "台北小巨蛋"
+                if "世運主場館" in text or "National Stadium" in text:
+                    return "高雄世運主場館"
+                if "台北流行音樂中心" in text or "Taipei Music Center" in text:
+                    return "台北流行音樂中心"
+                    
+            # 嘗試解析 meta description
+            meta_desc = soup.find('meta', attrs={'name': 'description'})
+            if meta_desc and meta_desc.get('content'):
+                desc = meta_desc['content']
+                if "高雄巨蛋" in desc: return "高雄巨蛋"
+                if "台北小巨蛋" in desc: return "台北小巨蛋"
+            
+            return default_venue
+        except Exception as e:
+            print(f"Scrape error: {e}")
+            return default_venue
+
+    parsed_venue = scrape_venue_from_tixcraft(task_data.url)
 
     def get_real_accommodations(venue_name: str) -> list:
         api_key = os.environ.get("GOOGLE_MAPS_API_KEY")
@@ -97,15 +128,57 @@ def create_task(task_data: TaskCreate, background_tasks: BackgroundTasks, db: Se
             print(f"Error fetching Google Maps API: {e}")
             return []
 
+    def get_real_transits(venue_name: str, departure: str) -> list:
+        if not departure:
+            return []
+        api_key = os.environ.get("GOOGLE_MAPS_API_KEY")
+        if not api_key:
+            return []
+            
+        try:
+            url = f"https://maps.googleapis.com/maps/api/directions/json?origin={departure}&destination={venue_name}&mode=transit&language=zh-TW&key={api_key}"
+            res = requests.get(url, timeout=5)
+            data = res.json()
+            
+            if data.get("status") != "OK":
+                return []
+                
+            leg = data["routes"][0]["legs"][0]
+            duration = leg.get("duration", {}).get("text", "未知")
+            fare = data["routes"][0].get("fare", {}).get("text", "依實際票價為準")
+            
+            transit_steps = [s for s in leg.get("steps", []) if s.get("travel_mode") == "TRANSIT"]
+            
+            if transit_steps:
+                main_transit = transit_steps[0]["transit_details"]
+                line_name = main_transit.get("line", {}).get("short_name") or main_transit.get("line", {}).get("name", "大眾運輸")
+                vehicle_type = main_transit.get("line", {}).get("vehicle", {}).get("name", "大眾運輸")
+                title = f"{vehicle_type} - {line_name}"
+                
+                departure_stop = main_transit.get("departure_stop", {}).get("name", "")
+                arrival_stop = main_transit.get("arrival_stop", {}).get("name", "")
+                desc = f"從 {departure_stop} 搭乘至 {arrival_stop}"
+            else:
+                title = "大眾運輸建議路線"
+                instructions = [re.sub(r'<[^>]+>', '', s.get("html_instructions", "")) for s in leg.get("steps", [])]
+                desc = " -> ".join([inst for inst in instructions if inst][:3])
+                
+            return [{
+                "id": 1,
+                "title": title,
+                "description": desc,
+                "duration": duration,
+                "cost": fare
+            }]
+        except Exception as e:
+            print(f"Error fetching Google Directions API: {e}")
+            return []
+
     # Get real recommendations if needed
     mock_accommodations = get_real_accommodations(parsed_venue) if task_data.needsAccommodation else []
-
-    mock_transits = [
-        {"id": 1, "title": "捷運直達" if not is_kaohsiung else "捷運轉乘", 
-         "description": "搭乘藍線至『科技館站』，從 3 號出口出站步行 5 分鐘即可抵達。" if not is_kaohsiung else "搭乘紅線至巨蛋站，步行 3 分鐘即可抵達。", 
-         "duration": "25 分鐘" if not is_kaohsiung else "10 分鐘", 
-         "cost": "$30"}
-    ]
+    
+    # Get real transit route
+    mock_transits = get_real_transits(parsed_venue, task_data.departure)
 
     return {
         "id": db_task.id,
