@@ -8,6 +8,7 @@ import requests
 from bs4 import BeautifulSoup
 import re
 import math
+from playwright.async_api import async_playwright
 
 import database
 import email_service
@@ -37,7 +38,7 @@ class TaskCreate(BaseModel):
     needsAccommodation: bool = False
 
 @app.post("/tasks")
-def create_task(task_data: TaskCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+async def create_task(task_data: TaskCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     budget_val = None
     if task_data.budget and str(task_data.budget).isdigit():
         budget_val = int(task_data.budget)
@@ -58,42 +59,45 @@ def create_task(task_data: TaskCreate, background_tasks: BackgroundTasks, db: Se
     # Send confirmation email in background
     background_tasks.add_task(email_service.send_task_created_email, db_task.email, db_task.url)
 
-    def scrape_venue_from_tixcraft(url: str) -> str:
+    async def scrape_venue_from_tixcraft(url: str) -> str:
         default_venue = "台北流行音樂中心" # Fallback venue
         try:
-            headers = {'User-Agent': 'Mozilla/5.0'}
-            r = requests.get(url, headers=headers, timeout=5)
-            soup = BeautifulSoup(r.text, 'html.parser')
-            
-            # 尋找 Tixcraft 頁面中的場地資訊
-            # 通常在詳細頁面上會有特定的結構或是字眼
-            for text in soup.stripped_strings:
-                if "高雄巨蛋" in text or "K-Arena" in text:
-                    return "高雄巨蛋"
-                if "台北小巨蛋" in text or "Taipei Arena" in text:
-                    return "台北小巨蛋"
-                if "世運主場館" in text or "National Stadium" in text:
-                    return "高雄世運主場館"
-                if "台北流行音樂中心" in text or "Taipei Music Center" in text:
-                    return "台北流行音樂中心"
+            async with async_playwright() as p:
+                browser = await p.chromium.launch(headless=True)
+                context = await browser.new_context(user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
+                page = await context.new_page()
+                try:
+                    # 等待 networkidle 確保 JS 已經渲染完成
+                    await page.goto(url, wait_until="networkidle", timeout=15000)
                     
-            # 嘗試解析 meta description
-            meta_desc = soup.find('meta', attrs={'name': 'description'})
-            if meta_desc and meta_desc.get('content'):
-                desc = meta_desc['content']
-                if "高雄巨蛋" in desc: return "高雄巨蛋"
-                if "台北小巨蛋" in desc: return "台北小巨蛋"
-            
-            return default_venue
+                    # 擷取頁面內容
+                    title = await page.title()
+                    content = await page.content()
+                    
+                    # 尋找場地資訊
+                    if "高雄巨蛋" in title or "高雄巨蛋" in content or "K-Arena" in title:
+                        return "高雄巨蛋"
+                    if "台北小巨蛋" in title or "台北小巨蛋" in content or "Taipei Arena" in title:
+                        return "台北小巨蛋"
+                    if "世運主場館" in title or "世運主場館" in content or "National Stadium" in title:
+                        return "高雄世運主場館"
+                    if "台北流行音樂中心" in title or "台北流行音樂中心" in content or "Taipei Music Center" in title:
+                        return "台北流行音樂中心"
+                        
+                    return default_venue
+                finally:
+                    # 確保資源釋放避免 Memory Leak
+                    await page.close()
+                    await browser.close()
         except Exception as e:
-            print(f"Scrape error: {e}")
+            print(f"Playwright scrape error: {e}")
             return default_venue
 
     if task_data.venue and task_data.venue.strip():
         parsed_venue = task_data.venue.strip()
         print(f"使用者手動填寫場館名稱: {parsed_venue}")
     else:
-        parsed_venue = scrape_venue_from_tixcraft(task_data.url)
+        parsed_venue = await scrape_venue_from_tixcraft(task_data.url)
         print(f"爬蟲抓到的場館名稱: {parsed_venue}")
 
     def get_real_accommodations(venue_name: str) -> list:
