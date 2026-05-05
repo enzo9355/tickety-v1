@@ -30,6 +30,7 @@ def get_db():
 class TaskCreate(BaseModel):
     url: str
     email: str
+    venue: Optional[str] = None
     departure: Optional[str] = None
     budget: Optional[str] = None
     needsAccommodation: bool = False
@@ -87,8 +88,12 @@ def create_task(task_data: TaskCreate, background_tasks: BackgroundTasks, db: Se
             print(f"Scrape error: {e}")
             return default_venue
 
-    parsed_venue = scrape_venue_from_tixcraft(task_data.url)
-    print(f"爬蟲抓到的場館名稱: {parsed_venue}")
+    if task_data.venue and task_data.venue.strip():
+        parsed_venue = task_data.venue.strip()
+        print(f"使用者手動填寫場館名稱: {parsed_venue}")
+    else:
+        parsed_venue = scrape_venue_from_tixcraft(task_data.url)
+        print(f"爬蟲抓到的場館名稱: {parsed_venue}")
 
     def get_real_accommodations(venue_name: str) -> list:
         api_key = os.environ.get("GOOGLE_MAPS_API_KEY")

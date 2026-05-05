@@ -6,6 +6,7 @@ export default function TaskInput({ onTaskAdded, onError }) {
   const [formData, setFormData] = useState({
     url: '',
     email: '',
+    venue: '',
     departure: '',
     budget: '',
     needsAccommodation: false
@@ -34,6 +35,7 @@ export default function TaskInput({ onTaskAdded, onError }) {
       setFormData({
         url: '',
         email: '',
+        venue: '',
         departure: '',
         budget: '',
         needsAccommodation: false
@@ -79,6 +81,19 @@ export default function TaskInput({ onTaskAdded, onError }) {
           className="glass-input"
           style={{ paddingLeft: '40px' }}
           required
+        />
+      </div>
+
+      <div style={{ position: 'relative' }}>
+        <MapPin size={18} style={{ position: 'absolute', left: '12px', top: '14px', color: 'rgba(255,255,255,0.4)' }} />
+        <input
+          type="text"
+          name="venue"
+          value={formData.venue}
+          onChange={handleChange}
+          placeholder="目標場館 (選填)"
+          className="glass-input"
+          style={{ paddingLeft: '40px' }}
         />
       </div>
 
