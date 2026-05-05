@@ -88,6 +88,7 @@ def create_task(task_data: TaskCreate, background_tasks: BackgroundTasks, db: Se
             return default_venue
 
     parsed_venue = scrape_venue_from_tixcraft(task_data.url)
+    print(f"爬蟲抓到的場館名稱: {parsed_venue}")
 
     def get_real_accommodations(venue_name: str) -> list:
         api_key = os.environ.get("GOOGLE_MAPS_API_KEY")
@@ -104,6 +105,7 @@ def create_task(task_data: TaskCreate, background_tasks: BackgroundTasks, db: Se
                 
             location = geo_data["results"][0]["geometry"]["location"]
             lat, lng = location["lat"], location["lng"]
+            print(f"轉換後的經緯度: {lat}, {lng}")
             
             # 2. Places API (Nearby Lodging)
             places_url = f"https://maps.googleapis.com/maps/api/place/nearbysearch/json?location={lat},{lng}&radius=1000&type=lodging&key={api_key}"
