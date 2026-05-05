@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional
+import os
+import requests
 
 import database
 import email_service
@@ -56,11 +58,47 @@ def create_task(task_data: TaskCreate, background_tasks: BackgroundTasks, db: Se
     is_kaohsiung = "kaohsiung" in task_data.url.lower() or "k-arena" in task_data.url.lower()
     parsed_venue = "高雄巨蛋" if is_kaohsiung else "台北流行音樂中心"
 
-    # Mock response for UI rendering (simulating the venue extraction and recommendations)
-    mock_accommodations = [
-        {"id": 1, "name": "Neon Heights Hotel", "rating": 4.8, "reviews": 124, "distance": "300m", "price": "$120"},
-        {"id": 2, "name": "Cyberpunk Inn", "rating": 4.5, "reviews": 89, "distance": "800m", "price": "$85"}
-    ] if task_data.needsAccommodation else []
+    def get_real_accommodations(venue_name: str) -> list:
+        api_key = os.environ.get("GOOGLE_MAPS_API_KEY")
+        if not api_key:
+            return []
+        try:
+            # 1. Geocoding
+            geocode_url = f"https://maps.googleapis.com/maps/api/geocode/json?address={venue_name}&key={api_key}"
+            geo_res = requests.get(geocode_url, timeout=5)
+            geo_data = geo_res.json()
+            
+            if geo_data.get("status") != "OK" or not geo_data.get("results"):
+                return []
+                
+            location = geo_data["results"][0]["geometry"]["location"]
+            lat, lng = location["lat"], location["lng"]
+            
+            # 2. Places API (Nearby Lodging)
+            places_url = f"https://maps.googleapis.com/maps/api/place/nearbysearch/json?location={lat},{lng}&radius=1000&type=lodging&key={api_key}"
+            places_res = requests.get(places_url, timeout=5)
+            places_data = places_res.json()
+            
+            if places_data.get("status") != "OK":
+                return []
+                
+            hotels = []
+            for place in places_data.get("results", [])[:3]:
+                hotels.append({
+                    "id": place.get("place_id"),
+                    "name": place.get("name", "Unknown Hotel"),
+                    "rating": place.get("rating", "N/A"),
+                    "reviews": place.get("user_ratings_total", 0),
+                    "distance": "1公里內",
+                    "price": "依官網為準"
+                })
+            return hotels
+        except Exception as e:
+            print(f"Error fetching Google Maps API: {e}")
+            return []
+
+    # Get real recommendations if needed
+    mock_accommodations = get_real_accommodations(parsed_venue) if task_data.needsAccommodation else []
 
     mock_transits = [
         {"id": 1, "title": "捷運直達" if not is_kaohsiung else "捷運轉乘", 
