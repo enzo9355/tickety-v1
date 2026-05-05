@@ -7,6 +7,7 @@ import os
 import requests
 from bs4 import BeautifulSoup
 import re
+import math
 
 import database
 import email_service
@@ -120,14 +121,31 @@ def create_task(task_data: TaskCreate, background_tasks: BackgroundTasks, db: Se
             if places_data.get("status") != "OK":
                 return []
                 
+            def haversine(lat1, lon1, lat2, lon2):
+                R = 6371000  # Earth radius in meters
+                phi1, phi2 = math.radians(lat1), math.radians(lat2)
+                delta_phi = math.radians(lat2 - lat1)
+                delta_lambda = math.radians(lon2 - lon1)
+                a = math.sin(delta_phi / 2.0) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(delta_lambda / 2.0) ** 2
+                return R * (2 * math.atan2(math.sqrt(a), math.sqrt(1 - a)))
+
             hotels = []
             for place in places_data.get("results", [])[:3]:
+                hotel_lat = place.get("geometry", {}).get("location", {}).get("lat", lat)
+                hotel_lng = place.get("geometry", {}).get("location", {}).get("lng", lng)
+                dist_m = haversine(lat, lng, hotel_lat, hotel_lng)
+                
+                if dist_m < 1000:
+                    dist_str = f"約 {int(dist_m)} 公尺"
+                else:
+                    dist_str = f"約 {dist_m/1000:.1f} 公里"
+
                 hotels.append({
                     "id": place.get("place_id"),
                     "name": place.get("name", "Unknown Hotel"),
                     "rating": place.get("rating", "N/A"),
                     "reviews": place.get("user_ratings_total", 0),
-                    "distance": "1公里內",
+                    "distance": dist_str,
                     "price": "依官網為準"
                 })
             return hotels
@@ -152,7 +170,12 @@ def create_task(task_data: TaskCreate, background_tasks: BackgroundTasks, db: Se
                 
             leg = data["routes"][0]["legs"][0]
             duration = leg.get("duration", {}).get("text", "未知")
-            fare = data["routes"][0].get("fare", {}).get("text", "依實際票價為準")
+            
+            fare_obj = data["routes"][0].get("fare")
+            if fare_obj and "value" in fare_obj:
+                fare = f"NT$ {fare_obj['value']}"
+            else:
+                fare = "請洽官網"
             
             transit_steps = [s for s in leg.get("steps", []) if s.get("travel_mode") == "TRANSIT"]
             
