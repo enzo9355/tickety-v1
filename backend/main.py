@@ -198,28 +198,33 @@ async def create_task(task_data: TaskCreate, background_tasks: BackgroundTasks, 
             else:
                 fare = "請洽官網"
             
-            transit_steps = [s for s in leg.get("steps", []) if s.get("travel_mode") == "TRANSIT"]
-            
-            if transit_steps:
-                main_transit = transit_steps[0]["transit_details"]
-                line_name = main_transit.get("line", {}).get("short_name") or main_transit.get("line", {}).get("name", "大眾運輸")
-                vehicle_type = main_transit.get("line", {}).get("vehicle", {}).get("name", "大眾運輸")
-                title = f"{vehicle_type} - {line_name}"
+            full_steps = []
+            for step in leg.get("steps", []):
+                mode = step.get("travel_mode", "UNKNOWN")
+                instruction = re.sub(r'<[^>]+>', '', step.get("html_instructions", ""))
+                step_duration = step.get("duration", {}).get("text", "")
                 
-                departure_stop = main_transit.get("departure_stop", {}).get("name", "")
-                arrival_stop = main_transit.get("arrival_stop", {}).get("name", "")
-                desc = f"從 {departure_stop} 搭乘至 {arrival_stop}"
-            else:
-                title = "大眾運輸建議路線"
-                instructions = [re.sub(r'<[^>]+>', '', s.get("html_instructions", "")) for s in leg.get("steps", [])]
-                desc = " -> ".join([inst for inst in instructions if inst][:3])
+                step_info = {
+                    "mode": mode,
+                    "instruction": instruction,
+                    "duration": step_duration
+                }
+                if mode == "TRANSIT":
+                    transit_details = step.get("transit_details", {})
+                    line_name = transit_details.get("line", {}).get("short_name") or transit_details.get("line", {}).get("name", "")
+                    vehicle = transit_details.get("line", {}).get("vehicle", {}).get("name", "")
+                    step_info["line"] = f"{vehicle} {line_name}".strip()
+                    step_info["num_stops"] = transit_details.get("num_stops", 0)
+                
+                full_steps.append(step_info)
                 
             return [{
                 "id": 1,
-                "title": title,
-                "description": desc,
+                "title": "大眾運輸路線規劃",
+                "description": "查看下方完整轉乘步驟",
                 "duration": duration,
-                "cost": fare
+                "cost": fare,
+                "full_steps": full_steps
             }]
         except Exception as e:
             print(f"Error fetching Google Directions API: {e}")
@@ -236,6 +241,7 @@ async def create_task(task_data: TaskCreate, background_tasks: BackgroundTasks, 
         "url": db_task.url,
         "email": db_task.email,
         "departure": db_task.departure,
+        "budget": db_task.budget,
         "needsAccommodation": db_task.needs_accommodation,
         "status": db_task.status,
         "createdAt": db_task.created_at.isoformat() + "Z",

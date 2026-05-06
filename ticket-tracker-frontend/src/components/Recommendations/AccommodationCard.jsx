@@ -21,7 +21,18 @@ export default function AccommodationCard({ hotel }) {
 
       <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flex: 1 }}>
         <div>
-          <h4 style={{ fontSize: '1.1rem', marginBottom: '4px' }}>{hotel.name}</h4>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <h4 style={{ fontSize: '1.1rem', marginBottom: '4px' }}>{hotel.name}</h4>
+            <a 
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hotel.name)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="glass-button"
+              style={{ padding: '4px 12px', fontSize: '0.85rem', width: 'auto', background: 'rgba(255,255,255,0.1)' }}
+            >
+              查看/訂房
+            </a>
+          </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--color-warning)', fontSize: '0.85rem' }}>
             <Star size={14} fill="currentColor" />
             <span>{hotel.rating} ({hotel.reviews} reviews)</span>
