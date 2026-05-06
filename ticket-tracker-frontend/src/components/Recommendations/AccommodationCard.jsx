@@ -14,7 +14,7 @@ export default function AccommodationCard({ hotel }) {
         width: '80px', 
         height: '80px', 
         borderRadius: '12px', 
-        background: 'rgba(0, 170, 255, 0.2)',
+        background: 'rgba(242, 169, 59, 0.2)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center'

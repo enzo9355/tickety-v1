@@ -32,9 +32,9 @@ function TaskLogTerminal({ isActive }) {
   if (!isActive) return null;
 
   return (
-    <div style={{ marginTop: '16px', background: '#0a0a0f', borderRadius: '8px', padding: '12px', border: '1px solid rgba(255,255,255,0.05)', maxHeight: '150px', overflowY: 'auto', fontFamily: 'monospace' }}>
+    <div style={{ marginTop: '16px', background: '#0a0a0f', borderRadius: '8px', padding: '12px', border: '1px solid rgba(245,239,230,0.08)', maxHeight: '150px', overflowY: 'auto', fontFamily: 'monospace' }}>
       {logs.map((log) => (
-        <div key={log.id} style={{ color: '#4ade80', fontSize: '0.8rem', marginBottom: '4px', display: 'flex', gap: '8px' }}>
+        <div key={log.id} style={{ color: '#39FF14', fontSize: '0.8rem', marginBottom: '4px', display: 'flex', gap: '8px' }}>
           <span style={{ color: 'var(--color-text-muted)' }}>[{log.time}]</span>
           <span>{log.text}</span>
         </div>
@@ -89,16 +89,16 @@ export default function TaskList({ tasks, selectedTask, onTaskSelected }) {
               justifyContent: 'space-between', 
               alignItems: 'flex-start',
               cursor: 'pointer',
-              border: isActive ? '1px solid var(--color-primary)' : '1px solid rgba(255, 255, 255, 0.08)',
-              background: isActive ? 'rgba(109, 40, 217, 0.05)' : 'rgba(255, 255, 255, 0.03)',
-              boxShadow: isActive ? '0 0 15px rgba(109, 40, 217, 0.2)' : '0 4px 30px rgba(0, 0, 0, 0.1)',
+              border: isActive ? '1px solid var(--color-primary)' : '1px solid rgba(245, 239, 230, 0.08)',
+              background: isActive ? 'rgba(232, 86, 10, 0.05)' : 'rgba(255, 255, 255, 0.03)',
+              boxShadow: isActive ? '0 0 15px rgba(232, 86, 10, 0.2)' : '0 4px 30px rgba(0, 0, 0, 0.1)',
               transition: 'all 0.2s ease'
             }}
           >
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', overflow: 'hidden', flex: 1 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <span style={{ 
-                  background: task.status === '監控中' ? 'rgba(109, 40, 217, 0.2)' : 'rgba(16, 185, 129, 0.2)', 
+                  background: task.status === '監控中' ? 'rgba(232, 86, 10, 0.2)' : 'rgba(16, 185, 129, 0.2)', 
                   color: task.status === '監控中' ? 'var(--color-secondary)' : 'var(--color-success)',
                   padding: '4px 10px', 
                   borderRadius: '12px', 
@@ -134,7 +134,7 @@ export default function TaskList({ tasks, selectedTask, onTaskSelected }) {
                   <button 
                     onClick={(e) => toggleLogs(e, task.id)}
                     className="glass-button"
-                    style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--color-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '4px 8px', fontSize: '0.8rem', height: 'auto', borderRadius: '6px' }}
+                    style={{ background: 'transparent', border: '1px solid rgba(245,239,230,0.1)', color: 'var(--color-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '4px 8px', fontSize: '0.8rem', height: 'auto', borderRadius: '6px' }}
                   >
                     <Terminal size={14} /> 日誌
                   </button>
@@ -149,7 +149,7 @@ export default function TaskList({ tasks, selectedTask, onTaskSelected }) {
               </div>
 
               {isExpanded && (
-                <div className="animate-fade-in" style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.1)', fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>
+                <div className="animate-fade-in" style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(245,239,230,0.08)', fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>
                   <p style={{ margin: '4px 0' }}><strong>建立時間：</strong> {task.createdAt ? new Date(task.createdAt).toLocaleString() : '未知'}</p>
                   <p style={{ margin: '4px 0' }}><strong>出發地：</strong> {task.departure || '未填寫'}</p>
                   <p style={{ margin: '4px 0' }}><strong>預算：</strong> {task.budget ? `$${task.budget}` : '未填寫'}</p>

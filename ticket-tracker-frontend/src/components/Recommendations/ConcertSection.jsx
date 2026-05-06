@@ -55,7 +55,7 @@ export default function ConcertSection({ concerts }) {
             target="_blank"
             rel="noopener noreferrer"
             variants={itemVariants}
-            whileHover={{ y: -4, borderColor: 'rgba(99,102,241,0.5)' }}
+            whileHover={{ y: -4, borderColor: 'rgba(232,86,10,0.5)' }}
             className="glass-panel"
             style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', textDecoration: 'none', color: 'inherit' }}
           >

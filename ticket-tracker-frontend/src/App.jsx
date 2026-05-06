@@ -64,11 +64,11 @@ function App() {
       <header style={{ marginBottom: '32px', textAlign: 'center', position: 'relative' }}>
         <div style={{
           position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-          width: '300px', height: '100px', background: 'radial-gradient(circle, rgba(167,139,250,0.15) 0%, transparent 70%)',
+          width: '300px', height: '100px', background: 'radial-gradient(circle, rgba(232,86,10,0.15) 0%, rgba(242,169,59,0) 70%)',
           filter: 'blur(20px)', zIndex: 0, pointerEvents: 'none'
         }} />
         <h1 className="animate-fade-in" style={{ position: 'relative', zIndex: 1, display: 'inline-flex', alignItems: 'center', gap: '12px', fontSize: '2.8rem', fontWeight: 700 }}>
-          <Ticket size={40} color="#a78bfa" />
+          <Ticket size={40} color="var(--color-primary)" />
           <span className="text-gradient">Tickety</span>
         </h1>
         <p className="animate-fade-in animate-delay-1" style={{ position: 'relative', zIndex: 1, color: 'var(--color-text-muted)', marginTop: '8px', fontSize: '1.1rem' }}>
@@ -80,17 +80,17 @@ function App() {
       <div className="animate-fade-in" style={{ 
         display: 'flex', justifyContent: 'center', gap: '16px', marginBottom: '40px', flexWrap: 'wrap'
       }}>
-        <div style={{ background: 'rgba(15,23,41,0.8)', padding: '12px 24px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+        <div style={{ background: 'rgba(42,28,20,0.8)', padding: '12px 24px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid rgba(245,239,230,0.08)' }}>
           <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: serverStatus === '良好' ? 'var(--color-success)' : 'var(--color-danger)' }}></span>
           <span style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>伺服器狀態</span>
           <strong style={{ color: 'white' }}>{serverStatus}</strong>
         </div>
-        <div style={{ background: 'rgba(15,23,41,0.8)', padding: '12px 24px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+        <div style={{ background: 'rgba(42,28,20,0.8)', padding: '12px 24px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid rgba(245,239,230,0.08)' }}>
           <span style={{ color: 'var(--color-secondary)' }}>🔍</span>
           <span style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>監控中任務數</span>
           <strong style={{ color: 'white' }}>{tasks.filter(t => t.status === '監控中').length}</strong>
         </div>
-        <div style={{ background: 'rgba(15,23,41,0.8)', padding: '12px 24px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+        <div style={{ background: 'rgba(42,28,20,0.8)', padding: '12px 24px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid rgba(245,239,230,0.08)' }}>
           <span style={{ color: 'var(--color-accent)' }}>🎫</span>
           <span style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>近期演唱會場數</span>
           <strong style={{ color: 'white' }}>{concerts.length}</strong>

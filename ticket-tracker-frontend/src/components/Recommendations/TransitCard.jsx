@@ -21,7 +21,7 @@ export default function TransitCard({ route }) {
           width: '50px', 
           height: '50px', 
           borderRadius: '12px', 
-          background: 'rgba(176, 38, 255, 0.2)',
+          background: 'rgba(232, 86, 10, 0.2)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center'
