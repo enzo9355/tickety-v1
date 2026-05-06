@@ -20,6 +20,7 @@ import email_service
 
 scheduler = AsyncIOScheduler()
 task_error_counts = {}
+concerts_cache = {"data": [], "expires": None}
 
 async def check_ticket_status(task_id: int, url: str, to_email: str):
     headers = {
@@ -168,6 +169,85 @@ def reverse_geocode(lat: float, lng: float):
             raise HTTPException(status_code=400, detail="無法解析該座標的地址")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
+
+@app.get("/api/concerts")
+async def get_concerts():
+    global concerts_cache
+    if concerts_cache["data"] and concerts_cache["expires"] and datetime.now() < concerts_cache["expires"]:
+        return concerts_cache["data"]
+        
+    url = "https://event.kkbox.com/tw/genre/concert"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36"
+    }
+    
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(url, headers=headers, timeout=10)
+            if resp.status_code != 200:
+                return []
+                
+            soup = BeautifulSoup(resp.text, 'html.parser')
+            events = soup.find_all('div', class_='event-card', limit=6)
+            
+            # If standard class isn't found, try typical structure for KKBOX events
+            if not events:
+                events = soup.select('.EventCard_eventCard__3TzL8')[:6]
+                if not events:
+                     events = soup.select('.event-item')[:6]
+                     if not events:
+                         events = soup.select('a[href*="/tw/event/"]')[:6]
+            
+            results = []
+            for event in events:
+                try:
+                    title_elem = event.select_one('.title, .EventCard_title__1dZ4X, h3')
+                    title = title_elem.text.strip() if title_elem else "未知活動"
+                    
+                    venue_elem = event.select_one('.location, .EventCard_location__2G_bV, .venue')
+                    venue = venue_elem.text.strip() if venue_elem else "未知場地"
+                    
+                    date_elem = event.select_one('.date, .EventCard_date__1XU1k, .time')
+                    date_str = date_elem.text.strip() if date_elem else "即將公佈"
+                    
+                    # Ensure event is a tag before accessing attrs
+                    if event.name == 'a':
+                        link = event.get('href', '#')
+                    else:
+                        link_elem = event.find('a')
+                        link = link_elem.get('href', '#') if link_elem else '#'
+                        
+                    if link.startswith('/'):
+                        link = f"https://event.kkbox.com{link}"
+                        
+                    img_elem = event.find('img')
+                    img_url = img_elem.get('src') if img_elem else "https://via.placeholder.com/400x200?text=No+Image"
+                    
+                    # Only add if title is meaningful
+                    if title != "未知活動":
+                        results.append({
+                            "title": title,
+                            "venue": venue,
+                            "date": date_str,
+                            "url": link,
+                            "imageUrl": img_url
+                        })
+                except Exception as ex:
+                    print(f"Error parsing concert card: {ex}")
+                    continue
+                    
+            if results:
+                concerts_cache["data"] = results
+                concerts_cache["expires"] = datetime.now() + timedelta(hours=12)
+                
+            return results
+    except Exception as e:
+        print(f"Failed to scrape concerts: {e}")
+        return []
 
 @app.post("/tasks")
 async def create_task(task_data: TaskCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):

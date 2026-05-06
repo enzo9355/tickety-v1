@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import TaskPanel from './components/TaskTracking/TaskPanel';
 import RecommendationSection from './components/Recommendations/RecommendationSection';
+import ConcertSection from './components/Recommendations/ConcertSection';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Ticket, AlertCircle, X } from 'lucide-react';
+import apiClient from './api/client';
 
 function App() {
   const [tasks, setTasks] = useState([]);
   const [selectedTask, setSelectedTask] = useState(null);
   const [error, setError] = useState(null);
+  const [serverStatus, setServerStatus] = useState('檢查中...');
+  const [concerts, setConcerts] = useState([]);
 
   // Auto clear error after 5 seconds
   useEffect(() => {
@@ -16,6 +20,18 @@ function App() {
       return () => clearTimeout(timer);
     }
   }, [error]);
+
+  useEffect(() => {
+    // Check server health
+    apiClient.get('/health')
+      .then(res => setServerStatus(res.data.status === 'ok' ? '良好' : '異常'))
+      .catch(() => setServerStatus('離線'));
+
+    // Fetch concerts
+    apiClient.get('/api/concerts')
+      .then(res => setConcerts(res.data || []))
+      .catch(() => setConcerts([]));
+  }, []);
 
   const handleTaskAdded = (newTask) => {
     setTasks(prev => [newTask, ...prev]);
@@ -45,20 +61,41 @@ function App() {
         </div>
       )}
 
-      <header style={{ marginBottom: '40px', textAlign: 'center', position: 'relative' }}>
+      <header style={{ marginBottom: '32px', textAlign: 'center', position: 'relative' }}>
         <div style={{
           position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-          width: '300px', height: '100px', background: 'radial-gradient(circle, rgba(167,139,250,0.2) 0%, transparent 70%)',
+          width: '300px', height: '100px', background: 'radial-gradient(circle, rgba(167,139,250,0.15) 0%, transparent 70%)',
           filter: 'blur(20px)', zIndex: 0, pointerEvents: 'none'
         }} />
-        <h1 className="animate-fade-in" style={{ position: 'relative', zIndex: 1, display: 'inline-flex', alignItems: 'center', gap: '12px', fontSize: '2.8rem', background: 'linear-gradient(135deg, #a78bfa, #22d3ee)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 700 }}>
+        <h1 className="animate-fade-in" style={{ position: 'relative', zIndex: 1, display: 'inline-flex', alignItems: 'center', gap: '12px', fontSize: '2.8rem', fontWeight: 700 }}>
           <Ticket size={40} color="#a78bfa" />
-          Tickety
+          <span className="text-gradient">Tickety</span>
         </h1>
         <p className="animate-fade-in animate-delay-1" style={{ position: 'relative', zIndex: 1, color: 'var(--color-text-muted)', marginTop: '8px', fontSize: '1.1rem' }}>
           全自動背景監控票券，智慧推薦周邊住宿與交通
         </p>
       </header>
+
+      {/* System Status Bar */}
+      <div className="animate-fade-in" style={{ 
+        display: 'flex', justifyContent: 'center', gap: '16px', marginBottom: '40px', flexWrap: 'wrap'
+      }}>
+        <div style={{ background: 'rgba(15,23,41,0.8)', padding: '12px 24px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+          <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: serverStatus === '良好' ? 'var(--color-success)' : 'var(--color-danger)' }}></span>
+          <span style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>伺服器狀態</span>
+          <strong style={{ color: 'white' }}>{serverStatus}</strong>
+        </div>
+        <div style={{ background: 'rgba(15,23,41,0.8)', padding: '12px 24px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+          <span style={{ color: 'var(--color-secondary)' }}>🔍</span>
+          <span style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>監控中任務數</span>
+          <strong style={{ color: 'white' }}>{tasks.filter(t => t.status === '監控中').length}</strong>
+        </div>
+        <div style={{ background: 'rgba(15,23,41,0.8)', padding: '12px 24px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+          <span style={{ color: 'var(--color-accent)' }}>🎫</span>
+          <span style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>近期演唱會場數</span>
+          <strong style={{ color: 'white' }}>{concerts.length}</strong>
+        </div>
+      </div>
 
       <ErrorBoundary>
         <main style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px', alignItems: 'start' }}>
@@ -74,8 +111,9 @@ function App() {
           </div>
 
           {/* Right Column: Recommendations */}
-          <div style={{ position: 'sticky', top: '40px' }}>
+          <div style={{ position: 'sticky', top: '40px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
             <RecommendationSection selectedTask={selectedTask} />
+            <ConcertSection concerts={concerts} />
           </div>
         </main>
       </ErrorBoundary>
