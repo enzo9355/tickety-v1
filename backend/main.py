@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, BackgroundTasks
+from fastapi import FastAPI, Depends, BackgroundTasks, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -36,6 +36,23 @@ class TaskCreate(BaseModel):
     departure: Optional[str] = None
     budget: Optional[str] = None
     needsAccommodation: bool = False
+
+@app.get("/api/reverse-geocode")
+def reverse_geocode(lat: float, lng: float):
+    api_key = os.environ.get("GOOGLE_MAPS_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="Google Maps API Key not configured")
+        
+    url = f"https://maps.googleapis.com/maps/api/geocode/json?latlng={lat},{lng}&key={api_key}&language=zh-TW"
+    try:
+        res = requests.get(url, timeout=5)
+        data = res.json()
+        if data.get("status") == "OK" and data.get("results"):
+            return {"address": data["results"][0]["formatted_address"]}
+        else:
+            raise HTTPException(status_code=400, detail="無法解析該座標的地址")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/tasks")
 async def create_task(task_data: TaskCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):

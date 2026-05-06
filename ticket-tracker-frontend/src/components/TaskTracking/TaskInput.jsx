@@ -12,6 +12,36 @@ export default function TaskInput({ onTaskAdded, onError }) {
     needsAccommodation: false
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
+
+  const handleLocate = () => {
+    if (!navigator.geolocation) {
+      onError("您的瀏覽器不支援地理位置功能。");
+      return;
+    }
+    
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+          const response = await apiClient.get(`/api/reverse-geocode?lat=${latitude}&lng=${longitude}`);
+          if (response.data && response.data.address) {
+            setFormData(prev => ({ ...prev, departure: response.data.address }));
+          }
+        } catch (error) {
+          console.error("Geocoding error:", error);
+          onError("自動定位失敗，無法取得地址。");
+        } finally {
+          setIsLocating(false);
+        }
+      },
+      (error) => {
+        setIsLocating(false);
+        onError("無法取得您的位置，請確認已授權 GPS 權限。");
+      }
+    );
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -98,17 +128,29 @@ export default function TaskInput({ onTaskAdded, onError }) {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-        <div style={{ position: 'relative' }}>
-          <MapPin size={18} style={{ position: 'absolute', left: '12px', top: '14px', color: 'rgba(255,255,255,0.4)' }} />
-          <input
-            type="text"
-            name="departure"
-            value={formData.departure}
-            onChange={handleChange}
-            placeholder="出發地"
-            className="glass-input"
-            style={{ paddingLeft: '40px' }}
-          />
+        <div style={{ position: 'relative', display: 'flex', gap: '8px' }}>
+          <div style={{ position: 'relative', flex: 1 }}>
+            <MapPin size={18} style={{ position: 'absolute', left: '12px', top: '14px', color: 'rgba(255,255,255,0.4)' }} />
+            <input
+              type="text"
+              name="departure"
+              value={formData.departure}
+              onChange={handleChange}
+              placeholder="出發地"
+              className="glass-input"
+              style={{ paddingLeft: '40px', width: '100%' }}
+            />
+          </div>
+          <button 
+            type="button" 
+            onClick={handleLocate}
+            disabled={isLocating}
+            className="glass-button" 
+            style={{ width: 'auto', padding: '0 12px', background: 'rgba(255,255,255,0.1)', fontSize: '0.9rem' }}
+            title="自動定位目前位置"
+          >
+            {isLocating ? 'Loading...' : '📍 定位'}
+          </button>
         </div>
         
         <div style={{ position: 'relative' }}>
