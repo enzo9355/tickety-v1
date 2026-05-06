@@ -45,12 +45,17 @@ function App() {
         </div>
       )}
 
-      <header style={{ marginBottom: '40px', textAlign: 'center' }}>
-        <h1 className="animate-fade-in" style={{ display: 'inline-flex', alignItems: 'center', gap: '12px', fontSize: '2.5rem', background: 'linear-gradient(to right, #b026ff, #00aaff)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-          <Ticket size={40} color="#b026ff" />
-          Tickety - 售票追蹤與推薦
+      <header style={{ marginBottom: '40px', textAlign: 'center', position: 'relative' }}>
+        <div style={{
+          position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+          width: '300px', height: '100px', background: 'radial-gradient(circle, rgba(167,139,250,0.2) 0%, transparent 70%)',
+          filter: 'blur(20px)', zIndex: 0, pointerEvents: 'none'
+        }} />
+        <h1 className="animate-fade-in" style={{ position: 'relative', zIndex: 1, display: 'inline-flex', alignItems: 'center', gap: '12px', fontSize: '2.8rem', background: 'linear-gradient(135deg, #a78bfa, #22d3ee)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 700 }}>
+          <Ticket size={40} color="#a78bfa" />
+          Tickety
         </h1>
-        <p className="animate-fade-in animate-delay-1" style={{ color: 'var(--color-text-muted)', marginTop: '8px', fontSize: '1.1rem' }}>
+        <p className="animate-fade-in animate-delay-1" style={{ position: 'relative', zIndex: 1, color: 'var(--color-text-muted)', marginTop: '8px', fontSize: '1.1rem' }}>
           全自動背景監控票券，智慧推薦周邊住宿與交通
         </p>
       </header>

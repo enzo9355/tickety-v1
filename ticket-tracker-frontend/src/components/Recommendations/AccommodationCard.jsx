@@ -1,11 +1,14 @@
 import React from 'react';
 import { Home, Star } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export default function AccommodationCard({ hotel }) {
   return (
-    <div className="glass-panel" style={{ padding: '20px', display: 'flex', gap: '16px', transition: 'transform 0.3s ease' }} 
-         onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
-         onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+    <motion.div 
+      className="glass-panel" 
+      whileHover={{ y: -4, scale: 1.01 }}
+      style={{ padding: '20px', display: 'flex', gap: '16px' }}
+    >
       
       <div style={{ 
         width: '80px', 
@@ -48,6 +51,6 @@ export default function AccommodationCard({ hotel }) {
           </span>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Train, Navigation, Footprints, Bus, Info } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export default function TransitCard({ route }) {
   const renderStepIcon = (mode) => {
@@ -9,7 +10,11 @@ export default function TransitCard({ route }) {
   };
 
   return (
-    <div className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <motion.div 
+      className="glass-panel" 
+      whileHover={{ y: -4, scale: 1.01 }}
+      style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}
+    >
       
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
         <div style={{ 
@@ -82,6 +87,6 @@ export default function TransitCard({ route }) {
         </p>
       )}
       
-    </div>
+    </motion.div>
   );
 }
