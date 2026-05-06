@@ -180,55 +180,82 @@ async def get_concerts():
     if concerts_cache["data"] and concerts_cache["expires"] and datetime.now() < concerts_cache["expires"]:
         return concerts_cache["data"]
         
-    url = "https://event.kkbox.com/tw/genre/concert"
+    url = "https://kktix.com/events"
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
+        "Accept-Language": "zh-TW,zh;q=0.9,en;q=0.8"
     }
     
     try:
         async with httpx.AsyncClient() as client:
-            resp = await client.get(url, headers=headers, timeout=10)
+            resp = await client.get(url, headers=headers, timeout=15)
             if resp.status_code != 200:
+                print(f"KKTIX returned status code: {resp.status_code}")
                 return []
                 
             soup = BeautifulSoup(resp.text, 'html.parser')
-            events = soup.find_all('div', class_='event-card', limit=6)
             
-            # If standard class isn't found, try typical structure for KKBOX events
+            # KKTIX usually has events in li within ul
+            # We'll select up to 12 events
+            events = soup.select('ul.events-list li, ul.ticket-list li, div.event-wrapper, li.event-list-item')
             if not events:
-                events = soup.select('.EventCard_eventCard__3TzL8')[:6]
-                if not events:
-                     events = soup.select('.event-item')[:6]
-                     if not events:
-                         events = soup.select('a[href*="/tw/event/"]')[:6]
+                # Fallback generic selection for KKTIX
+                events = soup.select('a.thumbnail, a[href*="/events/"]')
+                
+            events = events[:12]
             
             results = []
             for event in events:
                 try:
-                    title_elem = event.select_one('.title, .EventCard_title__1dZ4X, h3')
-                    title = title_elem.text.strip() if title_elem else "未知活動"
-                    
-                    venue_elem = event.select_one('.location, .EventCard_location__2G_bV, .venue')
-                    venue = venue_elem.text.strip() if venue_elem else "未知場地"
-                    
-                    date_elem = event.select_one('.date, .EventCard_date__1XU1k, .time')
-                    date_str = date_elem.text.strip() if date_elem else "即將公佈"
-                    
-                    # Ensure event is a tag before accessing attrs
+                    # Parse link
                     if event.name == 'a':
-                        link = event.get('href', '#')
+                        link_elem = event
                     else:
                         link_elem = event.find('a')
-                        link = link_elem.get('href', '#') if link_elem else '#'
-                        
-                    if link.startswith('/'):
-                        link = f"https://event.kkbox.com{link}"
-                        
-                    img_elem = event.find('img')
-                    img_url = img_elem.get('src') if img_elem else "https://via.placeholder.com/400x200?text=No+Image"
                     
-                    # Only add if title is meaningful
-                    if title != "未知活動":
+                    if not link_elem:
+                        continue
+                        
+                    link = link_elem.get('href', '#')
+                    if link.startswith('/'):
+                        link = f"https://kktix.com{link}"
+                        
+                    # Parse Title
+                    title_elem = event.select_one('h2, .title, .event-title, h3')
+                    if not title_elem and event.name == 'a':
+                        title_elem = event.select_one('h2, h3, .title') or event
+                    
+                    # Ensure title is a string
+                    if title_elem and title_elem.text:
+                        title = title_elem.text.strip()
+                    elif link_elem.get('title'):
+                        title = link_elem.get('title').strip()
+                    else:
+                        title = "KKTIX 精彩活動"
+                        
+                    # Parse Date
+                    date_elem = event.select_one('.date, .time, time')
+                    date_str = date_elem.text.strip() if date_elem else "即將公佈"
+                    
+                    # Parse Venue (KKTIX often combines it or puts it in .location)
+                    venue_elem = event.select_one('.location, .venue')
+                    venue = venue_elem.text.strip() if venue_elem else "地點詳見官網"
+                    
+                    # Parse Image
+                    img_elem = event.find('img')
+                    if img_elem:
+                        img_url = img_elem.get('src') or img_elem.get('data-src') or "https://via.placeholder.com/400x200?text=No+Image"
+                    else:
+                        # Sometimes it's a background image in a div
+                        bg_elem = event.select_one('.cover, .image, figure')
+                        if bg_elem and bg_elem.get('style') and 'url(' in bg_elem.get('style'):
+                            style = bg_elem.get('style')
+                            img_url = style.split('url(')[1].split(')')[0].strip('"\'')
+                        else:
+                            img_url = "https://via.placeholder.com/400x200?text=No+Image"
+                    
+                    # Filter out purely navigational links
+                    if len(title) > 2 and "/events" in link:
                         results.append({
                             "title": title,
                             "venue": venue,
@@ -237,8 +264,12 @@ async def get_concerts():
                             "imageUrl": img_url
                         })
                 except Exception as ex:
-                    print(f"Error parsing concert card: {ex}")
+                    print(f"Error parsing KKTIX concert card: {ex}")
                     continue
+            
+            # Ensure unique results based on URL
+            unique_results = {r['url']: r for r in results}.values()
+            results = list(unique_results)[:12]
                     
             if results:
                 concerts_cache["data"] = results
