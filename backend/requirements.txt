@@ -7,3 +7,5 @@ pydantic
 requests
 beautifulsoup4
 playwright
+apscheduler
+httpx

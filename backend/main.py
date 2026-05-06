@@ -8,12 +8,127 @@ import requests
 from bs4 import BeautifulSoup
 import re
 import math
+import random
+import httpx
+from datetime import datetime, timedelta
+from contextlib import asynccontextmanager
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from playwright.async_api import async_playwright
 
 import database
 import email_service
 
-app = FastAPI(title="Tickety Backend API")
+scheduler = AsyncIOScheduler()
+task_error_counts = {}
+
+async def check_ticket_status(task_id: int, url: str, to_email: str):
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
+        "Accept-Language": "zh-TW,zh;q=0.9,en;q=0.8",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Referer": "https://www.google.com/"
+    }
+    keywords = ["立即購票", "加入購物車", "熱賣中", "Buy Now", "Add to Cart", "尚有餘票"]
+    
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(url, headers=headers, timeout=10)
+            
+            if resp.status_code in [403, 429]:
+                task_error_counts[task_id] = task_error_counts.get(task_id, 0) + 1
+                if task_error_counts[task_id] >= 3:
+                    print(f"[Task {task_id}] 遭到封鎖 ({resp.status_code}) 達 3 次，將下次檢查延後 30 分鐘。")
+                    next_run = datetime.now() + timedelta(seconds=1800)
+                else:
+                    print(f"[Task {task_id}] 遭到封鎖 ({resp.status_code})，累計 {task_error_counts[task_id]} 次。")
+                    next_run = datetime.now() + timedelta(seconds=random.randint(300, 600))
+                
+                scheduler.add_job(
+                    check_ticket_status,
+                    'date',
+                    run_date=next_run,
+                    args=[task_id, url, to_email],
+                    id=f"task_{task_id}",
+                    replace_existing=True
+                )
+                return
+
+            text = resp.text
+            found = any(kw in text for kw in keywords)
+            if found:
+                print(f"[Task {task_id}] 偵測到釋票關鍵字！寄送通知並停止監控。")
+                email_service.send_ticket_alert(to_email, url)
+                
+                # 更新資料庫狀態
+                db = database.SessionLocal()
+                try:
+                    db_task = db.query(database.Task).filter(database.Task.id == task_id).first()
+                    if db_task:
+                        db_task.status = "已通知"
+                        db.commit()
+                finally:
+                    db.close()
+                    
+                # 不再排程，監控結束
+                if task_id in task_error_counts:
+                    del task_error_counts[task_id]
+                return
+            else:
+                # 沒找到，正常隨機排程下次
+                task_error_counts[task_id] = 0 # 重置錯誤
+                next_run = datetime.now() + timedelta(seconds=random.randint(300, 600))
+                print(f"[Task {task_id}] 未偵測到票券，下次檢查時間: {next_run.strftime('%H:%M:%S')}")
+                scheduler.add_job(
+                    check_ticket_status,
+                    'date',
+                    run_date=next_run,
+                    args=[task_id, url, to_email],
+                    id=f"task_{task_id}",
+                    replace_existing=True
+                )
+
+    except Exception as e:
+        print(f"[Task {task_id}] Scraper 例外錯誤: {e}")
+        # 發生錯誤也隨機排程，避免 scheduler 崩潰
+        next_run = datetime.now() + timedelta(seconds=random.randint(300, 600))
+        scheduler.add_job(
+            check_ticket_status,
+            'date',
+            run_date=next_run,
+            args=[task_id, url, to_email],
+            id=f"task_{task_id}",
+            replace_existing=True
+        )
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print("Starting APScheduler...")
+    scheduler.start()
+    
+    # Optional: 可以從資料庫讀取 status="監控中" 的任務並重新加入排程
+    db = database.SessionLocal()
+    try:
+        active_tasks = db.query(database.Task).filter(database.Task.status == "監控中").all()
+        for t in active_tasks:
+            # 隨機 5~300 秒內錯開啟動，避免伺服器重啟時同時發送大量請求
+            start_delay = random.randint(5, 300)
+            scheduler.add_job(
+                check_ticket_status,
+                'date',
+                run_date=datetime.now() + timedelta(seconds=start_delay),
+                args=[t.id, t.url, t.email],
+                id=f"task_{t.id}",
+                replace_existing=True
+            )
+        print(f"Resumed {len(active_tasks)} active tasks.")
+    finally:
+        db.close()
+        
+    yield
+    print("Shutting down APScheduler...")
+    scheduler.shutdown()
+
+app = FastAPI(title="Tickety Backend API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -75,6 +190,18 @@ async def create_task(task_data: TaskCreate, background_tasks: BackgroundTasks, 
 
     # Send confirmation email in background
     background_tasks.add_task(email_service.send_task_created_email, db_task.email, db_task.url)
+
+    # 將任務加入背景排程 (首次執行設在 5 ~ 60 秒內隨機，之後由 check_ticket_status 遞迴排程)
+    first_run_delay = random.randint(5, 60)
+    scheduler.add_job(
+        check_ticket_status,
+        'date',
+        run_date=datetime.now() + timedelta(seconds=first_run_delay),
+        args=[db_task.id, db_task.url, db_task.email],
+        id=f"task_{db_task.id}",
+        replace_existing=True
+    )
+    print(f"[Task {db_task.id}] 任務建立成功，首次檢查預計於 {first_run_delay} 秒後啟動。")
 
     async def scrape_venue_from_tixcraft(url: str) -> str:
         default_venue = "台北流行音樂中心" # Fallback venue
