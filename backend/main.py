@@ -14,6 +14,8 @@ from datetime import datetime, timedelta
 from contextlib import asynccontextmanager
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from playwright.async_api import async_playwright
+import asyncio
+from playwright_stealth import stealth_async
 
 import database
 import email_service
@@ -21,77 +23,97 @@ import email_service
 scheduler = AsyncIOScheduler()
 task_error_counts = {}
 concerts_cache = {"data": [], "expires": None}
+scrape_lock = asyncio.Lock()
+notifications_cache = []
 
 async def check_ticket_status(task_id: int, url: str, to_email: str):
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
-        "Accept-Language": "zh-TW,zh;q=0.9,en;q=0.8",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Referer": "https://www.google.com/"
-    }
     keywords = ["立即購票", "加入購物車", "熱賣中", "Buy Now", "Add to Cart", "尚有餘票"]
     
     try:
-        async with httpx.AsyncClient() as client:
-            resp = await client.get(url, headers=headers, timeout=10)
-            
-            if resp.status_code in [403, 429]:
-                task_error_counts[task_id] = task_error_counts.get(task_id, 0) + 1
-                if task_error_counts[task_id] >= 3:
-                    print(f"[Task {task_id}] 遭到封鎖 ({resp.status_code}) 達 3 次，將下次檢查延後 30 分鐘。")
-                    next_run = datetime.now() + timedelta(seconds=1800)
-                else:
-                    print(f"[Task {task_id}] 遭到封鎖 ({resp.status_code})，累計 {task_error_counts[task_id]} 次。")
-                    next_run = datetime.now() + timedelta(seconds=random.randint(300, 600))
-                
-                scheduler.add_job(
-                    check_ticket_status,
-                    'date',
-                    run_date=next_run,
-                    args=[task_id, url, to_email],
-                    id=f"task_{task_id}",
-                    replace_existing=True
-                )
-                return
-
-            text = resp.text
-            found = any(kw in text for kw in keywords)
-            if found:
-                print(f"[Task {task_id}] 偵測到釋票關鍵字！寄送通知並停止監控。")
-                email_service.send_ticket_alert(to_email, url)
-                
-                # 更新資料庫狀態
-                db = database.SessionLocal()
+        async with scrape_lock:
+            async with async_playwright() as p:
+                browser = await p.chromium.launch(headless=True)
                 try:
-                    db_task = db.query(database.Task).filter(database.Task.id == task_id).first()
-                    if db_task:
-                        db_task.status = "已通知"
-                        db.commit()
-                finally:
-                    db.close()
+                    context = await browser.new_context(
+                        user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+                        viewport={"width": 1280, "height": 800},
+                        locale="zh-TW"
+                    )
+                    page = await context.new_page()
+                    await stealth_async(page)
                     
-                # 不再排程，監控結束
-                if task_id in task_error_counts:
-                    del task_error_counts[task_id]
-                return
-            else:
-                # 沒找到，正常隨機排程下次
-                task_error_counts[task_id] = 0 # 重置錯誤
-                next_run = datetime.now() + timedelta(seconds=random.randint(300, 600))
-                print(f"[Task {task_id}] 未偵測到票券，下次檢查時間: {next_run.strftime('%H:%M:%S')}")
-                scheduler.add_job(
-                    check_ticket_status,
-                    'date',
-                    run_date=next_run,
-                    args=[task_id, url, to_email],
-                    id=f"task_{task_id}",
-                    replace_existing=True
-                )
+                    # Go to URL and wait for domcontentloaded
+                    response = await page.goto(url, wait_until="domcontentloaded", timeout=15000)
+                    await asyncio.sleep(random.uniform(2, 5))
+                    
+                    if response and response.status in [403, 429]:
+                        task_error_counts[task_id] = task_error_counts.get(task_id, 0) + 1
+                        if task_error_counts[task_id] >= 3:
+                            print(f"[Task {task_id}] 遭到封鎖 ({response.status}) 達 3 次，將下次檢查延後 30 分鐘。")
+                            next_run = datetime.now() + timedelta(seconds=1800)
+                        else:
+                            print(f"[Task {task_id}] 遭到封鎖 ({response.status})，累計 {task_error_counts[task_id]} 次。")
+                            next_run = datetime.now() + timedelta(seconds=random.randint(30, 90))
+                        
+                        scheduler.add_job(
+                            check_ticket_status,
+                            'date',
+                            run_date=next_run,
+                            args=[task_id, url, to_email],
+                            id=f"task_{task_id}",
+                            replace_existing=True
+                        )
+                        return
+
+                    content = await page.content()
+                    title = await page.title()
+                    
+                    found = any(kw in content for kw in keywords)
+                    if found:
+                        print(f"[Task {task_id}] 偵測到釋票關鍵字！寄送通知並停止監控。")
+                        email_service.send_ticket_alert(to_email, url)
+                        
+                        # Add to notifications
+                        notifications_cache.append({
+                            "id": f"notif_{task_id}_{int(datetime.now().timestamp())}",
+                            "task_id": task_id,
+                            "title": title or "未知活動",
+                            "time": "請至購票網頁查看",
+                            "url": url,
+                            "timestamp": datetime.now().isoformat()
+                        })
+                        
+                        # Update DB
+                        db = database.SessionLocal()
+                        try:
+                            db_task = db.query(database.Task).filter(database.Task.id == task_id).first()
+                            if db_task:
+                                db_task.status = "已通知"
+                                db.commit()
+                        finally:
+                            db.close()
+                            
+                        if task_id in task_error_counts:
+                            del task_error_counts[task_id]
+                        return
+                    else:
+                        task_error_counts[task_id] = 0
+                        next_run = datetime.now() + timedelta(seconds=random.randint(30, 90))
+                        print(f"[Task {task_id}] 未偵測到票券，下次檢查時間: {next_run.strftime('%H:%M:%S')}")
+                        scheduler.add_job(
+                            check_ticket_status,
+                            'date',
+                            run_date=next_run,
+                            args=[task_id, url, to_email],
+                            id=f"task_{task_id}",
+                            replace_existing=True
+                        )
+                finally:
+                    await browser.close()
 
     except Exception as e:
-        print(f"[Task {task_id}] Scraper 例外錯誤: {e}")
-        # 發生錯誤也隨機排程，避免 scheduler 崩潰
-        next_run = datetime.now() + timedelta(seconds=random.randint(300, 600))
+        print(f"[Task {task_id}] Playwright Scraper 例外錯誤: {e}")
+        next_run = datetime.now() + timedelta(seconds=random.randint(30, 90))
         scheduler.add_job(
             check_ticket_status,
             'date',
@@ -173,6 +195,11 @@ def reverse_geocode(lat: float, lng: float):
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
+
+@app.get("/api/notifications")
+def get_notifications():
+    # Return last 20 notifications
+    return notifications_cache[-20:]
 
 @app.get("/api/concerts")
 async def get_concerts():

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import TaskPanel from './components/TaskTracking/TaskPanel';
 import RecommendationSection from './components/Recommendations/RecommendationSection';
 import ConcertSection from './components/Recommendations/ConcertSection';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { Ticket, AlertCircle, X } from 'lucide-react';
+import { Ticket, AlertCircle, X, Bell, ExternalLink } from 'lucide-react';
 import apiClient from './api/client';
 
 function App() {
@@ -12,6 +13,8 @@ function App() {
   const [error, setError] = useState(null);
   const [serverStatus, setServerStatus] = useState('檢查中...');
   const [concerts, setConcerts] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [visibleToasts, setVisibleToasts] = useState([]);
 
   // Auto clear error after 5 seconds
   useEffect(() => {
@@ -31,6 +34,25 @@ function App() {
     apiClient.get('/api/concerts')
       .then(res => setConcerts(res.data || []))
       .catch(() => setConcerts([]));
+      
+    // Poll notifications every 10 seconds
+    const pollInterval = setInterval(() => {
+      apiClient.get('/api/notifications')
+        .then(res => {
+          const newNotifs = res.data || [];
+          setNotifications(prev => {
+            const prevIds = new Set(prev.map(n => n.id));
+            const actuallyNew = newNotifs.filter(n => !prevIds.has(n.id));
+            if (actuallyNew.length > 0) {
+              setVisibleToasts(current => [...current, ...actuallyNew]);
+            }
+            return newNotifs;
+          });
+        })
+        .catch(console.error);
+    }, 10000);
+    
+    return () => clearInterval(pollInterval);
   }, []);
 
   const handleTaskAdded = (newTask) => {
@@ -60,6 +82,58 @@ function App() {
           </button>
         </div>
       )}
+
+      {/* Ticket Notifications */}
+      <div style={{ position: 'fixed', bottom: '24px', right: '24px', zIndex: 1000, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <AnimatePresence>
+          {visibleToasts.map((toast) => (
+            <motion.div
+              key={toast.id}
+              initial={{ opacity: 0, x: 50, scale: 0.9 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: 50, scale: 0.9 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              className="glass-panel"
+              style={{
+                width: '350px',
+                padding: '20px',
+                background: 'rgba(42,28,20,0.95)',
+                border: '1px solid var(--color-primary)',
+                boxShadow: '0 8px 32px rgba(232, 86, 10, 0.3)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ background: 'var(--color-primary)', borderRadius: '50%', padding: '6px' }}>
+                  <Bell size={16} color="white" />
+                </div>
+                <strong style={{ color: 'white', flex: 1 }}>發現釋票！</strong>
+                <button 
+                  onClick={() => setVisibleToasts(current => current.filter(t => t.id !== toast.id))}
+                  style={{ background: 'transparent', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer' }}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+              <div style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <p style={{ margin: 0 }}><strong>活動：</strong> {toast.title}</p>
+                <p style={{ margin: 0 }}><strong>時間：</strong> {toast.time}</p>
+              </div>
+              <a 
+                href={toast.url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="glass-button"
+                style={{ textDecoration: 'none', fontSize: '0.95rem', padding: '10px' }}
+              >
+                直達購票連結 <ExternalLink size={16} />
+              </a>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
 
       <header style={{ marginBottom: '32px', textAlign: 'center', position: 'relative' }}>
         <div style={{
