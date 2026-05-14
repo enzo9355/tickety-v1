@@ -61,6 +61,24 @@ export default function TaskInput({ onTaskAdded, onError }) {
     }));
   };
 
+  const validateStep = (step) => {
+    if (step === 1) {
+      if (!formData.url) return false;
+      try {
+        const urlObj = new URL(formData.url.startsWith('http') ? formData.url : `https://${formData.url}`);
+        const validDomains = ['kktix', 'tixcraft', 'ticketplus'];
+        return validDomains.some(domain => urlObj.hostname.toLowerCase().includes(domain));
+      } catch {
+        return false;
+      }
+    }
+    if (step === 4) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return emailRegex.test(formData.email);
+    }
+    return true;
+  };
+
   const nextStep = () => {
     if (currentStep === 1 && !formData.url) return;
     if (currentStep < 4) setCurrentStep(c => c + 1);
@@ -285,7 +303,7 @@ export default function TaskInput({ onTaskAdded, onError }) {
           <button 
             type="button" 
             onClick={nextStep} 
-            disabled={currentStep === 1 && !formData.url}
+            disabled={!validateStep(currentStep)}
             className="glass-button"
           >
             下一步 <ChevronRight size={18} />
@@ -294,7 +312,7 @@ export default function TaskInput({ onTaskAdded, onError }) {
           <button 
             type="button" 
             onClick={handleSubmit} 
-            disabled={submitState !== 'idle' || !formData.email}
+            disabled={submitState !== 'idle' || !validateStep(4)}
             className="glass-button"
             style={{ width: '160px' }}
           >

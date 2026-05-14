@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, BackgroundTasks, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
+from pydantic import BaseModel, HttpUrl, EmailStr, Field
 from typing import Optional
 import os
 import requests
@@ -222,11 +222,11 @@ def get_db():
         db.close()
 
 class TaskCreate(BaseModel):
-    url: str
-    email: str
+    url: HttpUrl
+    email: EmailStr
     venue: Optional[str] = None
     departure: Optional[str] = None
-    budget: Optional[str] = None
+    budget: Optional[int] = Field(None, ge=0)
     needsAccommodation: bool = False
 
 @app.get("/api/reverse-geocode")
@@ -363,16 +363,12 @@ async def get_concerts():
 
 @app.post("/tasks")
 async def create_task(task_data: TaskCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
-    budget_val = None
-    if task_data.budget and str(task_data.budget).isdigit():
-        budget_val = int(task_data.budget)
-
     # Save to database
     db_task = database.Task(
-        url=task_data.url,
+        url=str(task_data.url),
         email=task_data.email,
         departure=task_data.departure,
-        budget=budget_val,
+        budget=task_data.budget,
         needs_accommodation=task_data.needsAccommodation,
         status="監控中"
     )
@@ -381,7 +377,7 @@ async def create_task(task_data: TaskCreate, background_tasks: BackgroundTasks, 
     db.refresh(db_task)
 
     # Send confirmation email in background
-    background_tasks.add_task(email_service.send_task_created_email, db_task.email, db_task.url)
+    background_tasks.add_task(email_service.send_task_created_email, db_task.email, str(db_task.url))
 
     # 將任務加入背景排程 (首次執行設在 5 ~ 60 秒內隨機，之後由 check_ticket_status 遞迴排程)
     first_run_delay = random.randint(5, 60)

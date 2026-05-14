@@ -12,3 +12,4 @@ httpx
 playwright-stealth==1.0.6
 setuptools<70.0.0
 psycopg2-binary
+email-validator
