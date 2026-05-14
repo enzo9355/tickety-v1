@@ -97,9 +97,9 @@ export default function TaskList({ tasks, selectedTask, onTaskSelected }) {
                 flexDirection: 'column',
                 cursor: 'pointer',
                 overflow: 'hidden',
-                border: isActive ? '1px solid var(--color-primary)' : '1px solid rgba(245, 239, 230, 0.08)',
-                background: isActive ? 'rgba(232, 86, 10, 0.05)' : 'rgba(255, 255, 255, 0.03)',
-                boxShadow: isActive ? '0 0 15px rgba(232, 86, 10, 0.2)' : '0 4px 30px rgba(0, 0, 0, 0.1)',
+                border: isActive ? '1px solid var(--color-primary)' : '1px solid rgba(0, 0, 0, 0.05)',
+                background: isActive ? 'rgba(255, 91, 0, 0.05)' : '#FFFFFF',
+                boxShadow: isActive ? '0 8px 30px rgba(255, 91, 0, 0.15)' : '0 4px 30px rgba(0, 0, 0, 0.04)',
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 transform: isActive ? 'translateY(-4px)' : 'none'
               }}
@@ -118,7 +118,7 @@ export default function TaskList({ tasks, selectedTask, onTaskSelected }) {
                 }} />
                 <div style={{ position: 'absolute', top: '12px', right: '12px' }}>
                   <span style={{ 
-                    background: task.status === '監控中' ? 'rgba(232, 86, 10, 0.9)' : 'rgba(16, 185, 129, 0.9)', 
+                    background: task.status === '監控中' ? 'var(--color-secondary)' : 'var(--color-primary)', 
                     color: 'white',
                     padding: '6px 12px', 
                     borderRadius: '20px', 
@@ -141,7 +141,7 @@ export default function TaskList({ tasks, selectedTask, onTaskSelected }) {
                   建立於 {task.createdAt ? new Date(task.createdAt).toLocaleDateString() : new Date().toLocaleDateString()}
                 </div>
                 
-                <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: 'var(--color-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {task.venue || '未指定場館活動'}
                 </h4>
                 
@@ -150,15 +150,15 @@ export default function TaskList({ tasks, selectedTask, onTaskSelected }) {
                 </p>
                 
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '4px' }}>
-                  {task.departure && <span style={{ fontSize: '0.8rem', padding: '4px 8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px' }}>📍 {task.departure}</span>}
-                  {task.budget && <span style={{ fontSize: '0.8rem', padding: '4px 8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px' }}>💰 ${task.budget}</span>}
+                  {task.departure && <span style={{ fontSize: '0.8rem', padding: '4px 8px', background: '#F8F9FA', borderRadius: '4px', color: 'var(--color-text-muted)' }}>📍 {task.departure}</span>}
+                  {task.budget && <span style={{ fontSize: '0.8rem', padding: '4px 8px', background: '#F8F9FA', borderRadius: '4px', color: 'var(--color-text-muted)' }}>💰 ${task.budget}</span>}
                 </div>
 
                 <div style={{ marginTop: 'auto', paddingTop: '16px', display: 'flex', gap: '8px' }}>
                   <button 
                     onClick={(e) => toggleLogs(e, task.id)}
                     className="glass-button"
-                    style={{ flex: 1, padding: '8px', fontSize: '0.9rem', background: 'rgba(255,255,255,0.05)' }}
+                    style={{ flex: 1, padding: '8px', fontSize: '0.9rem', background: '#F8F9FA', color: 'var(--color-text)', boxShadow: 'none' }}
                   >
                     <Terminal size={16} /> 狀態日誌
                   </button>

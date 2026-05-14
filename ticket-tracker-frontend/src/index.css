@@ -1,19 +1,19 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
 :root {
-  --color-primary: #E8560A;
-  --color-primary-hover: #F26D24;
-  --color-secondary: #F2A93B;
+  --color-primary: #FF5B00;
+  --color-primary-hover: #E05000;
+  --color-secondary: #00B3CC;
   --color-accent: #F5BC5E;
-  --color-bg: #120D0A;
-  --color-text: #F5EFE6;
-  --color-text-muted: #B89880;
+  --color-bg: #F8F9FA;
+  --color-text: #212529;
+  --color-text-muted: #6C757D;
   --color-success: #10b981;
   --color-danger: #ef4444;
   --color-warning: #F2A93B;
   
   font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
-  color-scheme: dark;
+  color-scheme: light;
   color: var(--color-text);
   background-color: var(--color-bg);
   font-synthesis: none;
@@ -29,7 +29,7 @@ body {
   overflow-x: hidden;
 }
 
-/* Background glowing orbs */
+/* Background glowing orbs for light theme */
 body::before, body::after {
   content: '';
   position: fixed;
@@ -43,7 +43,7 @@ body::before {
   left: -100px;
   width: 500px;
   height: 500px;
-  background: rgba(232, 86, 10, 0.2);
+  background: rgba(255, 91, 0, 0.08);
   filter: blur(120px);
 }
 
@@ -52,7 +52,7 @@ body::after {
   right: -100px;
   width: 400px;
   height: 400px;
-  background: rgba(242, 169, 59, 0.15);
+  background: rgba(0, 179, 204, 0.08);
   filter: blur(100px);
 }
 
@@ -60,116 +60,11 @@ body::after {
   box-sizing: border-box;
 }
 
-/* Glass panel */
-.glass-panel {
-  background: #1E1410;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(232, 86, 10, 0.2);
-  border-radius: 16px;
-}
-
-/* Button */
-.glass-button {
-  background: var(--color-primary);
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 12px;
-  font-family: inherit;
-  font-weight: 500;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-}
-
-.glass-button:hover:not(:disabled) {
-  background: var(--color-primary-hover);
-  transform: translateY(-2px);
-  box-shadow: 0 0 20px rgba(232, 86, 10, 0.4);
-}
-
-.glass-button:active:not(:disabled) {
-  background: #C44008;
-  transform: scale(0.98);
-}
-
-.glass-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-
-/* Input */
-.glass-input {
-  width: 100%;
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(245, 239, 230, 0.08);
-  padding: 12px 16px;
-  border-radius: 12px;
-  color: white;
-  font-family: inherit;
-  font-size: 1rem;
-  transition: all 0.2s ease;
-}
-
-.glass-input::placeholder {
-  color: #7A5E4E;
-}
-
-.glass-input:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(232, 86, 10, 0.2);
-  background: rgba(0, 0, 0, 0.4);
-}
-
-/* Checkbox wrapper */
-.glass-checkbox-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  user-select: none;
-}
-
-.glass-checkbox {
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  border-radius: 6px;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(245, 239, 230, 0.08);
-  cursor: pointer;
-  position: relative;
-  transition: all 0.2s ease;
-}
-
-.glass-checkbox:checked {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
-}
-
-.glass-checkbox:checked::after {
-  content: '';
-  position: absolute;
-  left: 6px;
-  top: 2px;
-  width: 4px;
-  height: 10px;
-  border: solid white;
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
-}
-
-.glass-checkbox:focus {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(232, 86, 10, 0.2);
+/* Typography Gradient utility */
+.text-gradient {
+  background: linear-gradient(135deg, #FF5B00, #F2A93B);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 /* Custom Scrollbar */
@@ -182,17 +77,10 @@ body::after {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(245, 239, 230, 0.08);
+  background: rgba(0, 0, 0, 0.1);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(245, 239, 230, 0.15);
-}
-
-/* Typography Gradient utility */
-.text-gradient {
-  background: linear-gradient(135deg, #E8560A, #F2A93B);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  background: rgba(0, 0, 0, 0.2);
 }

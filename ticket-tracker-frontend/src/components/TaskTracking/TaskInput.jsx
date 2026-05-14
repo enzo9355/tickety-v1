@@ -157,16 +157,16 @@ export default function TaskInput({ onTaskAdded, onError, initialUrl }) {
             <div style={{
               width: '32px', height: '32px', borderRadius: '50%',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: currentStep > step.id || (currentStep === 4 && submitState === 'success') ? 'var(--color-success)' : currentStep === step.id ? 'var(--color-primary)' : 'rgba(255,255,255,0.1)',
-              color: 'white', fontWeight: 'bold', fontSize: '0.9rem',
+              background: currentStep > step.id || (currentStep === 4 && submitState === 'success') ? 'var(--color-success)' : currentStep === step.id ? 'var(--color-primary)' : '#E9ECEF',
+              color: currentStep === step.id || currentStep > step.id ? 'white' : 'var(--color-text-muted)', fontWeight: 'bold', fontSize: '0.9rem',
               transition: 'all 0.3s ease'
             }}>
-              {currentStep > step.id || (currentStep === 4 && submitState === 'success') ? <Check size={16} /> : step.id}
+              {currentStep > step.id || (currentStep === 4 && submitState === 'success') ? <Check size={16} color="white" /> : step.id}
             </div>
             {idx < steps.length - 1 && (
               <div style={{
                 flex: 1, height: '2px', margin: '0 12px',
-                background: currentStep > step.id ? 'var(--color-success)' : 'rgba(255,255,255,0.1)',
+                background: currentStep > step.id ? 'var(--color-success)' : '#E9ECEF',
                 transition: 'all 0.3s ease'
               }} />
             )}
@@ -192,7 +192,7 @@ export default function TaskInput({ onTaskAdded, onError, initialUrl }) {
             {currentStep === 1 && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div style={{ position: 'relative' }}>
-                  <LinkIcon size={18} style={{ position: 'absolute', left: '16px', top: '14px', color: 'rgba(255,255,255,0.4)' }} />
+                  <LinkIcon size={18} style={{ position: 'absolute', left: '16px', top: '14px', color: '#ADB5BD' }} />
                   <input
                     type="url"
                     name="url"
@@ -211,7 +211,7 @@ export default function TaskInput({ onTaskAdded, onError, initialUrl }) {
             {currentStep === 2 && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div style={{ position: 'relative' }}>
-                  <MapPin size={18} style={{ position: 'absolute', left: '16px', top: '14px', color: 'rgba(255,255,255,0.4)' }} />
+                  <MapPin size={18} style={{ position: 'absolute', left: '16px', top: '14px', color: '#ADB5BD' }} />
                   <input
                     type="text"
                     name="venue"
@@ -224,7 +224,7 @@ export default function TaskInput({ onTaskAdded, onError, initialUrl }) {
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <div style={{ position: 'relative', flex: 1 }}>
-                    <MapPin size={18} style={{ position: 'absolute', left: '16px', top: '14px', color: 'rgba(255,255,255,0.4)' }} />
+                    <MapPin size={18} style={{ position: 'absolute', left: '16px', top: '14px', color: '#ADB5BD' }} />
                     <input
                       type="text"
                       name="departure"
@@ -240,7 +240,7 @@ export default function TaskInput({ onTaskAdded, onError, initialUrl }) {
                     onClick={handleLocate}
                     disabled={isLocating}
                     className="glass-button" 
-                    style={{ width: 'auto', background: 'rgba(255,255,255,0.1)', color: 'var(--color-secondary)' }}
+                    style={{ width: 'auto', background: '#F8F9FA', color: 'var(--color-secondary)', boxShadow: 'none' }}
                   >
                     {isLocating ? 'Loading...' : '📍 定位'}
                   </button>
@@ -251,7 +251,7 @@ export default function TaskInput({ onTaskAdded, onError, initialUrl }) {
             {currentStep === 3 && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div style={{ position: 'relative' }}>
-                  <DollarSign size={18} style={{ position: 'absolute', left: '16px', top: '14px', color: 'rgba(255,255,255,0.4)' }} />
+                  <DollarSign size={18} style={{ position: 'absolute', left: '16px', top: '14px', color: '#ADB5BD' }} />
                   <input
                     type="number"
                     name="budget"
@@ -271,7 +271,7 @@ export default function TaskInput({ onTaskAdded, onError, initialUrl }) {
                     onChange={handleChange}
                     className="glass-checkbox"
                   />
-                  <span style={{ fontSize: '1rem', color: 'white' }}>需要安排周邊住宿推薦</span>
+                  <span style={{ fontSize: '1rem', color: 'var(--color-text)' }}>需要安排周邊住宿推薦</span>
                 </label>
               </div>
             )}
@@ -279,7 +279,7 @@ export default function TaskInput({ onTaskAdded, onError, initialUrl }) {
             {currentStep === 4 && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div style={{ position: 'relative' }}>
-                  <Mail size={18} style={{ position: 'absolute', left: '16px', top: '14px', color: 'rgba(255,255,255,0.4)' }} />
+                  <Mail size={18} style={{ position: 'absolute', left: '16px', top: '14px', color: '#ADB5BD' }} />
                   <input
                     type="email"
                     name="email"
@@ -300,7 +300,7 @@ export default function TaskInput({ onTaskAdded, onError, initialUrl }) {
       {/* Navigation Buttons */}
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 'auto', paddingTop: '16px' }}>
         {currentStep > 1 ? (
-          <button type="button" onClick={prevStep} className="glass-button" style={{ background: 'rgba(255,255,255,0.05)' }}>
+          <button type="button" onClick={prevStep} className="glass-button" style={{ background: '#F8F9FA', color: 'var(--color-text)', boxShadow: 'none' }}>
             <ChevronLeft size={18} /> 返回
           </button>
         ) : <div />}

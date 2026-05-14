@@ -1,17 +1,17 @@
 /* Glassmorphism Utilities */
 
 .glass-panel {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid #FFFFFF;
   border-radius: 16px;
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
 }
 
 .glass-input {
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #FFFFFF;
+  border: 1px solid #E9ECEF;
   color: var(--color-text);
   padding: 12px 16px;
   border-radius: 8px;
@@ -20,37 +20,38 @@
 }
 
 .glass-input:focus {
+  outline: none;
   border-color: var(--color-primary);
-  background: rgba(0, 0, 0, 0.4);
-  box-shadow: 0 0 0 3px rgba(176, 38, 255, 0.2);
+  background: #FFFFFF;
+  box-shadow: 0 0 0 3px rgba(255, 91, 0, 0.15);
 }
 
 .glass-input::placeholder {
-  color: rgba(255, 255, 255, 0.3);
+  color: #ADB5BD;
 }
 
 .glass-button {
-  background: linear-gradient(135deg, var(--color-primary), #6026ff);
+  background: linear-gradient(135deg, var(--color-primary), #FF8C00);
   color: white;
   padding: 12px 24px;
   border-radius: 8px;
   font-weight: 600;
-  transition: all 0.3s ease;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 4px 15px rgba(176, 38, 255, 0.3);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  border: none;
+  box-shadow: 0 4px 15px rgba(255, 91, 0, 0.2);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
 }
 
-.glass-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(176, 38, 255, 0.5);
-  background: linear-gradient(135deg, var(--color-primary-hover), #7a42ff);
+.glass-button:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(255, 91, 0, 0.3);
+  background: linear-gradient(135deg, var(--color-primary-hover), #FF7300);
 }
 
-.glass-button:active {
+.glass-button:active:not(:disabled) {
   transform: translateY(0);
 }
 
@@ -58,6 +59,7 @@
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
+  box-shadow: none;
 }
 
 /* Checkbox styling */
@@ -72,9 +74,9 @@
   appearance: none;
   width: 20px;
   height: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid #CED4DA;
   border-radius: 4px;
-  background: rgba(0, 0, 0, 0.2);
+  background: #FFFFFF;
   transition: all 0.2s ease;
   position: relative;
   cursor: pointer;
