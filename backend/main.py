@@ -10,6 +10,7 @@ import re
 import math
 import random
 import httpx
+import psutil
 from datetime import datetime, timedelta
 from contextlib import asynccontextmanager
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -53,6 +54,14 @@ class BrowserManager:
         if cls._playwright:
             await cls._playwright.stop()
             cls._playwright = None
+
+    @classmethod
+    def get_page_count(cls):
+        count = 0
+        if cls._browser:
+            for context in cls._browser.contexts:
+                count += len(context.pages)
+        return count
 
 async def block_resources(route):
     if route.request.resource_type in ["image", "stylesheet", "font", "media"]:
@@ -249,6 +258,19 @@ def reverse_geocode(lat: float, lng: float):
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
+
+@app.get("/debug/stats")
+def get_debug_stats():
+    process = psutil.Process(os.getpid())
+    mem = process.memory_info()
+    return {
+        "cpu_percent": process.cpu_percent(interval=0.1),
+        "memory_info": {
+            "rss": mem.rss,
+            "vms": mem.vms
+        },
+        "playwright_pages_count": BrowserManager.get_page_count()
+    }
 
 @app.get("/api/notifications")
 def get_notifications():
