@@ -26,90 +26,143 @@ concerts_cache = {"data": [], "expires": None}
 scrape_lock = asyncio.Lock()
 notifications_cache = []
 
+class BrowserManager:
+    _instance = None
+    _browser = None
+    _playwright = None
+
+    @classmethod
+    async def get_browser(cls):
+        if cls._browser is None:
+            cls._playwright = await async_playwright().start()
+            cls._browser = await cls._playwright.chromium.launch(
+                headless=True,
+                args=[
+                    "--disable-gpu",
+                    "--no-sandbox",
+                    "--disable-dev-shm-usage",
+                ]
+            )
+        return cls._browser
+
+    @classmethod
+    async def close(cls):
+        if cls._browser:
+            await cls._browser.close()
+            cls._browser = None
+        if cls._playwright:
+            await cls._playwright.stop()
+            cls._playwright = None
+
+async def block_resources(route):
+    if route.request.resource_type in ["image", "stylesheet", "font", "media"]:
+        await route.abort()
+    else:
+        await route.continue_()
+
 async def check_ticket_status(task_id: int, url: str, to_email: str):
-    keywords = ["立即購票", "加入購物車", "熱賣中", "Buy Now", "Add to Cart", "尚有餘票"]
-    
     try:
         async with scrape_lock:
-            async with async_playwright() as p:
-                browser = await p.chromium.launch(headless=True)
-                try:
-                    context = await browser.new_context(
-                        user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-                        viewport={"width": 1280, "height": 800},
-                        locale="zh-TW"
-                    )
-                    page = await context.new_page()
-                    await stealth_async(page)
-                    
-                    # Go to URL and wait for domcontentloaded
-                    response = await page.goto(url, wait_until="domcontentloaded", timeout=15000)
-                    await asyncio.sleep(random.uniform(2, 5))
-                    
-                    if response and response.status in [403, 429]:
-                        task_error_counts[task_id] = task_error_counts.get(task_id, 0) + 1
-                        if task_error_counts[task_id] >= 3:
-                            print(f"[Task {task_id}] 遭到封鎖 ({response.status}) 達 3 次，將下次檢查延後 30 分鐘。")
-                            next_run = datetime.now() + timedelta(seconds=1800)
-                        else:
-                            print(f"[Task {task_id}] 遭到封鎖 ({response.status})，累計 {task_error_counts[task_id]} 次。")
-                            next_run = datetime.now() + timedelta(seconds=random.randint(30, 90))
-                        
-                        scheduler.add_job(
-                            check_ticket_status,
-                            'date',
-                            run_date=next_run,
-                            args=[task_id, url, to_email],
-                            id=f"task_{task_id}",
-                            replace_existing=True
-                        )
-                        return
+            browser = await BrowserManager.get_browser()
+            context = await browser.new_context(
+                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+                viewport={"width": 1280, "height": 800},
+                locale="zh-TW"
+            )
+            try:
+                await context.route("**/*", block_resources)
+                page = await context.new_page()
+                await stealth_async(page)
+                
+                ticket_found = False
+                
+                async def handle_response(response):
+                    nonlocal ticket_found
+                    if "api/v1/tickets" in response.url or "ticket" in response.url.lower() or "events" in response.url.lower():
+                        if "application/json" in response.headers.get("content-type", ""):
+                            try:
+                                json_data = await response.json()
+                                def check_purchasable(data):
+                                    if isinstance(data, dict):
+                                        status = data.get("status")
+                                        if status in ["available", "on_sale", "purchasable", True, 1, "1", "OK", "BUY", "立即購票"]:
+                                            return True
+                                        for v in data.values():
+                                            if check_purchasable(v): return True
+                                    elif isinstance(data, list):
+                                        for item in data:
+                                            if check_purchasable(item): return True
+                                    return False
+                                if check_purchasable(json_data):
+                                    ticket_found = True
+                            except Exception:
+                                pass
 
-                    content = await page.content()
-                    title = await page.title()
-                    
-                    found = any(kw in content for kw in keywords)
-                    if found:
-                        print(f"[Task {task_id}] 偵測到釋票關鍵字！寄送通知並停止監控。")
-                        email_service.send_ticket_alert(to_email, url)
-                        
-                        # Add to notifications
-                        notifications_cache.append({
-                            "id": f"notif_{task_id}_{int(datetime.now().timestamp())}",
-                            "task_id": task_id,
-                            "title": title or "未知活動",
-                            "time": "請至購票網頁查看",
-                            "url": url,
-                            "timestamp": datetime.now().isoformat()
-                        })
-                        
-                        # Update DB
-                        db = database.SessionLocal()
-                        try:
-                            db_task = db.query(database.Task).filter(database.Task.id == task_id).first()
-                            if db_task:
-                                db_task.status = "已通知"
-                                db.commit()
-                        finally:
-                            db.close()
-                            
-                        if task_id in task_error_counts:
-                            del task_error_counts[task_id]
-                        return
+                page.on("response", handle_response)
+                
+                response = await page.goto(url, wait_until="networkidle", timeout=15000)
+                await asyncio.sleep(random.uniform(2, 5))
+                
+                if response and response.status in [403, 429]:
+                    task_error_counts[task_id] = task_error_counts.get(task_id, 0) + 1
+                    if task_error_counts[task_id] >= 3:
+                        print(f"[Task {task_id}] 遭到封鎖 ({response.status}) 達 3 次，將下次檢查延後 30 分鐘。")
+                        next_run = datetime.now() + timedelta(seconds=1800)
                     else:
-                        task_error_counts[task_id] = 0
+                        print(f"[Task {task_id}] 遭到封鎖 ({response.status})，累計 {task_error_counts[task_id]} 次。")
                         next_run = datetime.now() + timedelta(seconds=random.randint(30, 90))
-                        print(f"[Task {task_id}] 未偵測到票券，下次檢查時間: {next_run.strftime('%H:%M:%S')}")
-                        scheduler.add_job(
-                            check_ticket_status,
-                            'date',
-                            run_date=next_run,
-                            args=[task_id, url, to_email],
-                            id=f"task_{task_id}",
-                            replace_existing=True
-                        )
-                finally:
-                    await browser.close()
+                    
+                    scheduler.add_job(
+                        check_ticket_status,
+                        'date',
+                        run_date=next_run,
+                        args=[task_id, url, to_email],
+                        id=f"task_{task_id}",
+                        replace_existing=True
+                    )
+                    return
+
+                title = await page.title()
+                
+                if ticket_found:
+                    print(f"[Task {task_id}] 偵測到釋票特徵！寄送通知並停止監控。")
+                    email_service.send_ticket_alert(to_email, url)
+                    
+                    notifications_cache.append({
+                        "id": f"notif_{task_id}_{int(datetime.now().timestamp())}",
+                        "task_id": task_id,
+                        "title": title or "未知活動",
+                        "time": "請至購票網頁查看",
+                        "url": url,
+                        "timestamp": datetime.now().isoformat()
+                    })
+                    
+                    db = database.SessionLocal()
+                    try:
+                        db_task = db.query(database.Task).filter(database.Task.id == task_id).first()
+                        if db_task:
+                            db_task.status = "已通知"
+                            db.commit()
+                    finally:
+                        db.close()
+                        
+                    if task_id in task_error_counts:
+                        del task_error_counts[task_id]
+                    return
+                else:
+                    task_error_counts[task_id] = 0
+                    next_run = datetime.now() + timedelta(seconds=random.randint(30, 90))
+                    print(f"[Task {task_id}] 未偵測到票券，下次檢查時間: {next_run.strftime('%H:%M:%S')}")
+                    scheduler.add_job(
+                        check_ticket_status,
+                        'date',
+                        run_date=next_run,
+                        args=[task_id, url, to_email],
+                        id=f"task_{task_id}",
+                        replace_existing=True
+                    )
+            finally:
+                await context.close()
 
     except Exception as e:
         print(f"[Task {task_id}] Playwright Scraper 例外錯誤: {e}")
@@ -148,8 +201,9 @@ async def lifespan(app: FastAPI):
         db.close()
         
     yield
-    print("Shutting down APScheduler...")
+    print("Shutting down APScheduler and Browser...")
     scheduler.shutdown()
+    await BrowserManager.close()
 
 app = FastAPI(title="Tickety Backend API", lifespan=lifespan)
 
@@ -344,33 +398,33 @@ async def create_task(task_data: TaskCreate, background_tasks: BackgroundTasks, 
     async def scrape_venue_from_tixcraft(url: str) -> str:
         default_venue = "台北流行音樂中心" # Fallback venue
         try:
-            async with async_playwright() as p:
-                browser = await p.chromium.launch(headless=True)
-                context = await browser.new_context(user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
+            browser = await BrowserManager.get_browser()
+            context = await browser.new_context(user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
+            try:
+                await context.route("**/*", block_resources)
                 page = await context.new_page()
-                try:
-                    # 等待 networkidle 確保 JS 已經渲染完成
-                    await page.goto(url, wait_until="networkidle", timeout=15000)
+                
+                # 等待 networkidle 確保 JS 已經渲染完成
+                await page.goto(url, wait_until="networkidle", timeout=15000)
+                
+                # 擷取頁面內容
+                title = await page.title()
+                content = await page.content()
+                
+                # 尋找場地資訊
+                if "高雄巨蛋" in title or "高雄巨蛋" in content or "K-Arena" in title:
+                    return "高雄巨蛋"
+                if "台北小巨蛋" in title or "台北小巨蛋" in content or "Taipei Arena" in title:
+                    return "台北小巨蛋"
+                if "世運主場館" in title or "世運主場館" in content or "National Stadium" in title:
+                    return "高雄世運主場館"
+                if "台北流行音樂中心" in title or "台北流行音樂中心" in content or "Taipei Music Center" in title:
+                    return "台北流行音樂中心"
                     
-                    # 擷取頁面內容
-                    title = await page.title()
-                    content = await page.content()
-                    
-                    # 尋找場地資訊
-                    if "高雄巨蛋" in title or "高雄巨蛋" in content or "K-Arena" in title:
-                        return "高雄巨蛋"
-                    if "台北小巨蛋" in title or "台北小巨蛋" in content or "Taipei Arena" in title:
-                        return "台北小巨蛋"
-                    if "世運主場館" in title or "世運主場館" in content or "National Stadium" in title:
-                        return "高雄世運主場館"
-                    if "台北流行音樂中心" in title or "台北流行音樂中心" in content or "Taipei Music Center" in title:
-                        return "台北流行音樂中心"
-                        
-                    return default_venue
-                finally:
-                    # 確保資源釋放避免 Memory Leak
-                    await page.close()
-                    await browser.close()
+                return default_venue
+            finally:
+                # 確保資源釋放避免 Memory Leak
+                await context.close()
         except Exception as e:
             print(f"Playwright scrape error: {e}")
             return default_venue
