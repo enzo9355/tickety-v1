@@ -161,7 +161,7 @@ export default function TaskInput({ onTaskAdded, onError, initialUrl }) {
               color: currentStep === step.id || currentStep > step.id ? 'white' : 'var(--color-text-muted)', fontWeight: 'bold', fontSize: '0.9rem',
               transition: 'all 0.3s ease'
             }}>
-              {currentStep > step.id || (currentStep === 4 && submitState === 'success') ? <Check size={16} color="white" /> : step.id}
+              {currentStep > step.id || (currentStep === 4 && submitState === 'success') ? <Check size={16} color="#FFFFFF" /> : step.id}
             </div>
             {idx < steps.length - 1 && (
               <div style={{

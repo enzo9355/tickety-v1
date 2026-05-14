@@ -5,17 +5,17 @@
   --color-primary-hover: #E05000;
   --color-secondary: #00B3CC;
   --color-accent: #F5BC5E;
-  --color-bg: #F8F9FA;
-  --color-text: #212529;
-  --color-text-muted: #6C757D;
+  --color-bg: #F8F9FA !important;
+  --color-text: #212529 !important;
+  --color-text-muted: #6C757D !important;
   --color-success: #10b981;
   --color-danger: #ef4444;
   --color-warning: #F2A93B;
   
   font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
   color-scheme: light;
-  color: var(--color-text);
-  background-color: var(--color-bg);
+  color: var(--color-text) !important;
+  background-color: var(--color-bg) !important;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -27,6 +27,17 @@ body {
   min-height: 100vh;
   position: relative;
   overflow-x: hidden;
+  background-color: #F8F9FA !important;
+  color: #212529 !important;
+}
+
+* {
+  box-sizing: border-box;
+  color: inherit;
+}
+
+h1, h2, h3, h4, h5, h6, p, span, div, strong, label, a {
+  color: #212529;
 }
 
 /* Background glowing orbs for light theme */
@@ -56,31 +67,24 @@ body::after {
   filter: blur(100px);
 }
 
-* {
-  box-sizing: border-box;
-}
-
 /* Typography Gradient utility */
 .text-gradient {
   background: linear-gradient(135deg, #FF5B00, #F2A93B);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
 }
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
 }
-
 ::-webkit-scrollbar-track {
   background: transparent;
 }
-
 ::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.1);
   border-radius: 4px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.2);
 }

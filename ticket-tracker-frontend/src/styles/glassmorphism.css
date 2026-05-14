@@ -1,18 +1,23 @@
 /* Glassmorphism Utilities */
 
-.glass-panel {
-  background: rgba(255, 255, 255, 0.7);
+.glass-panel, .glass-card {
+  background: rgba(255, 255, 255, 0.85) !important;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid #FFFFFF;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
   border-radius: 16px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
 }
 
+.glass-panel h1, .glass-panel h2, .glass-panel h3, .glass-panel p, .glass-panel span, .glass-panel div,
+.glass-card h1, .glass-card h2, .glass-card h3, .glass-card p, .glass-card span, .glass-card div {
+  color: #212529 !important;
+}
+
 .glass-input {
-  background: #FFFFFF;
-  border: 1px solid #E9ECEF;
-  color: var(--color-text);
+  background: #FFFFFF !important;
+  border: 1px solid #E9ECEF !important;
+  color: #212529 !important;
   padding: 12px 16px;
   border-radius: 8px;
   transition: all 0.3s ease;
@@ -21,23 +26,23 @@
 
 .glass-input:focus {
   outline: none;
-  border-color: var(--color-primary);
-  background: #FFFFFF;
-  box-shadow: 0 0 0 3px rgba(255, 91, 0, 0.15);
+  border-color: var(--color-primary) !important;
+  background: #FFFFFF !important;
+  box-shadow: 0 0 0 3px rgba(255, 91, 0, 0.15) !important;
 }
 
 .glass-input::placeholder {
-  color: #ADB5BD;
+  color: #6C757D !important;
 }
 
 .glass-button {
-  background: linear-gradient(135deg, var(--color-primary), #FF8C00);
-  color: white;
+  background: linear-gradient(135deg, var(--color-primary), #FF8C00) !important;
+  color: white !important;
   padding: 12px 24px;
   border-radius: 8px;
   font-weight: 600;
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  border: none;
+  border: none !important;
   box-shadow: 0 4px 15px rgba(255, 91, 0, 0.2);
   display: inline-flex;
   align-items: center;
@@ -48,7 +53,7 @@
 .glass-button:hover:not(:disabled) {
   transform: translateY(-3px);
   box-shadow: 0 8px 25px rgba(255, 91, 0, 0.3);
-  background: linear-gradient(135deg, var(--color-primary-hover), #FF7300);
+  background: linear-gradient(135deg, var(--color-primary-hover), #FF7300) !important;
 }
 
 .glass-button:active:not(:disabled) {
@@ -74,17 +79,17 @@
   appearance: none;
   width: 20px;
   height: 20px;
-  border: 1px solid #CED4DA;
+  border: 1px solid #CED4DA !important;
   border-radius: 4px;
-  background: #FFFFFF;
+  background: #FFFFFF !important;
   transition: all 0.2s ease;
   position: relative;
   cursor: pointer;
 }
 
 .glass-checkbox:checked {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
+  background: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
 }
 
 .glass-checkbox:checked::after {
@@ -94,8 +99,8 @@
   left: 6px;
   width: 5px;
   height: 10px;
-  border: solid white;
-  border-width: 0 2px 2px 0;
+  border: solid white !important;
+  border-width: 0 2px 2px 0 !important;
   transform: rotate(45deg);
 }
 

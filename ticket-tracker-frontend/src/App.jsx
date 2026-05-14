@@ -77,8 +77,8 @@ function App() {
           boxShadow: '0 8px 32px rgba(255, 0, 0, 0.2)'
         }}>
           <AlertCircle color="var(--color-danger)" size={24} />
-          <span style={{ flex: 1, color: '#fff', fontSize: '0.95rem' }}>{error}</span>
-          <button onClick={() => setError(null)} style={{ background: 'transparent', color: '#fff', opacity: 0.6 }}>
+          <span style={{ flex: 1, color: '#212529', fontSize: '0.95rem' }}>{error}</span>
+          <button onClick={() => setError(null)} style={{ background: 'transparent', color: 'var(--color-text-muted)', opacity: 0.6, border: 'none', cursor: 'pointer' }}>
             <X size={20} />
           </button>
         </div>
@@ -98,8 +98,8 @@ function App() {
               style={{
                 width: '350px',
                 padding: '20px',
-                background: 'rgba(42,28,20,0.95)',
-                border: '1px solid var(--color-primary)',
+                background: 'rgba(255, 255, 255, 0.95)',
+                border: '1px solid #E9ECEF',
                 boxShadow: '0 8px 32px rgba(232, 86, 10, 0.3)',
                 display: 'flex',
                 flexDirection: 'column',
@@ -108,9 +108,9 @@ function App() {
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <div style={{ background: 'var(--color-primary)', borderRadius: '50%', padding: '6px' }}>
-                  <Bell size={16} color="white" />
+                  <Bell size={16} color="#FFFFFF" />
                 </div>
-                <strong style={{ color: 'white', flex: 1 }}>發現釋票！</strong>
+                <strong style={{ color: '#212529', flex: 1 }}>發現釋票！</strong>
                 <button 
                   onClick={() => setVisibleToasts(current => current.filter(t => t.id !== toast.id))}
                   style={{ background: 'transparent', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer' }}
@@ -156,14 +156,14 @@ function App() {
         }}>
           <div style={{ 
             display: 'flex', 
-            background: 'rgba(255, 255, 255, 0.05)', 
+            background: '#FFFFFF', 
             backdropFilter: 'blur(20px)',
             borderRadius: '16px', 
-            border: '1px solid rgba(255, 255, 255, 0.1)',
+            border: '1px solid #E9ECEF',
             padding: '8px',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)'
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.05)'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', padding: '0 16px', color: 'rgba(255,255,255,0.4)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', padding: '0 16px', color: '#ADB5BD' }}>
               <Search size={24} />
             </div>
             <input 
@@ -175,7 +175,7 @@ function App() {
                 flex: 1,
                 background: 'transparent',
                 border: 'none',
-                color: 'white',
+                color: '#212529',
                 fontSize: '1.1rem',
                 outline: 'none',
                 padding: '16px 0',
@@ -203,8 +203,8 @@ function App() {
                   document.getElementById('task-input-section')?.scrollIntoView({ behavior: 'smooth' });
                 }}
                 style={{
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.1)',
+                  background: '#F8F9FA',
+                  border: '1px solid #E9ECEF',
                   borderRadius: '20px',
                   padding: '4px 12px',
                   color: 'var(--color-secondary)',
@@ -212,8 +212,8 @@ function App() {
                   cursor: 'pointer',
                   transition: 'all 0.2s ease'
                 }}
-                onMouseOver={e => e.target.style.background = 'rgba(255,255,255,0.1)'}
-                onMouseOut={e => e.target.style.background = 'rgba(255,255,255,0.05)'}
+                onMouseOver={e => e.target.style.background = '#E9ECEF'}
+                onMouseOut={e => e.target.style.background = '#F8F9FA'}
               >
                 {tag}
               </button>
@@ -226,20 +226,20 @@ function App() {
       <div className="animate-fade-in" style={{ 
         display: 'flex', justifyContent: 'center', gap: '16px', marginBottom: '40px', flexWrap: 'wrap'
       }}>
-        <div style={{ background: 'rgba(42,28,20,0.8)', padding: '12px 24px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid rgba(245,239,230,0.08)' }}>
+        <div style={{ background: '#FFFFFF', padding: '12px 24px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid #E9ECEF', boxShadow: '0 4px 15px rgba(0,0,0,0.02)' }}>
           <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: serverStatus === '良好' ? 'var(--color-success)' : 'var(--color-danger)' }}></span>
           <span style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>伺服器狀態</span>
-          <strong style={{ color: 'white' }}>{serverStatus}</strong>
+          <strong style={{ color: '#212529' }}>{serverStatus}</strong>
         </div>
-        <div style={{ background: 'rgba(42,28,20,0.8)', padding: '12px 24px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid rgba(245,239,230,0.08)' }}>
+        <div style={{ background: '#FFFFFF', padding: '12px 24px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid #E9ECEF', boxShadow: '0 4px 15px rgba(0,0,0,0.02)' }}>
           <span style={{ color: 'var(--color-secondary)' }}>🔍</span>
           <span style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>監控中任務數</span>
-          <strong style={{ color: 'white' }}>{tasks.filter(t => t.status === '監控中').length}</strong>
+          <strong style={{ color: '#212529' }}>{tasks.filter(t => t.status === '監控中').length}</strong>
         </div>
-        <div style={{ background: 'rgba(42,28,20,0.8)', padding: '12px 24px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid rgba(245,239,230,0.08)' }}>
+        <div style={{ background: '#FFFFFF', padding: '12px 24px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid #E9ECEF', boxShadow: '0 4px 15px rgba(0,0,0,0.02)' }}>
           <span style={{ color: 'var(--color-accent)' }}>🎫</span>
           <span style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>近期演唱會場數</span>
-          <strong style={{ color: 'white' }}>{concerts.length}</strong>
+          <strong style={{ color: '#212529' }}>{concerts.length}</strong>
         </div>
       </div>
 
