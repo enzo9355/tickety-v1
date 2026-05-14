@@ -4,7 +4,7 @@ import TaskPanel from './components/TaskTracking/TaskPanel';
 import RecommendationSection from './components/Recommendations/RecommendationSection';
 import ConcertSection from './components/Recommendations/ConcertSection';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { Ticket, AlertCircle, X, Bell, ExternalLink } from 'lucide-react';
+import { Ticket, AlertCircle, X, Bell, ExternalLink, Search } from 'lucide-react';
 import apiClient from './api/client';
 
 function App() {
@@ -15,6 +15,7 @@ function App() {
   const [concerts, setConcerts] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [visibleToasts, setVisibleToasts] = useState([]);
+  const [heroSearchUrl, setHeroSearchUrl] = useState('');
 
   // Auto clear error after 5 seconds
   useEffect(() => {
@@ -135,7 +136,7 @@ function App() {
         </AnimatePresence>
       </div>
 
-      <header style={{ marginBottom: '32px', textAlign: 'center', position: 'relative' }}>
+      <header style={{ marginBottom: '40px', textAlign: 'center', position: 'relative' }}>
         <div style={{
           position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
           width: '300px', height: '100px', background: 'radial-gradient(circle, rgba(232,86,10,0.15) 0%, rgba(242,169,59,0) 70%)',
@@ -148,6 +149,77 @@ function App() {
         <p className="animate-fade-in animate-delay-1" style={{ position: 'relative', zIndex: 1, color: 'var(--color-text-muted)', marginTop: '8px', fontSize: '1.1rem' }}>
           全自動背景監控票券，智慧推薦周邊住宿與交通
         </p>
+
+        {/* OTA Style Hero Search Bar */}
+        <div className="animate-fade-in animate-delay-1" style={{ 
+          maxWidth: '800px', margin: '32px auto 0', display: 'flex', flexDirection: 'column', gap: '16px', position: 'relative', zIndex: 2 
+        }}>
+          <div style={{ 
+            display: 'flex', 
+            background: 'rgba(255, 255, 255, 0.05)', 
+            backdropFilter: 'blur(20px)',
+            borderRadius: '16px', 
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            padding: '8px',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', padding: '0 16px', color: 'rgba(255,255,255,0.4)' }}>
+              <Search size={24} />
+            </div>
+            <input 
+              type="url"
+              placeholder="貼上拓元、KKTIX 等售票連結，立即開啟智能監控..."
+              value={heroSearchUrl}
+              onChange={e => setHeroSearchUrl(e.target.value)}
+              style={{
+                flex: 1,
+                background: 'transparent',
+                border: 'none',
+                color: 'white',
+                fontSize: '1.1rem',
+                outline: 'none',
+                padding: '16px 0',
+                width: '100%'
+              }}
+            />
+            <button 
+              className="glass-button" 
+              style={{ background: 'var(--color-primary)', color: 'white', border: 'none', padding: '0 32px', fontSize: '1.1rem', borderRadius: '12px', whiteSpace: 'nowrap' }}
+              onClick={() => {
+                document.getElementById('task-input-section')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+            >
+              開始監控
+            </button>
+          </div>
+          
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            <span style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', display: 'flex', alignItems: 'center' }}>熱門監控標籤：</span>
+            {['#五月天', '#Blackpink', '#周杰倫', '#宇多田光'].map(tag => (
+              <button 
+                key={tag}
+                onClick={() => {
+                  setHeroSearchUrl(`https://tixcraft.com/activity/detail/${tag.replace('#', '')}`);
+                  document.getElementById('task-input-section')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                style={{
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '20px',
+                  padding: '4px 12px',
+                  color: 'var(--color-secondary)',
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseOver={e => e.target.style.background = 'rgba(255,255,255,0.1)'}
+                onMouseOut={e => e.target.style.background = 'rgba(255,255,255,0.05)'}
+              >
+                {tag}
+              </button>
+            ))}
+          </div>
+        </div>
       </header>
 
       {/* System Status Bar */}
@@ -181,6 +253,7 @@ function App() {
               onTaskAdded={handleTaskAdded}
               onTaskSelected={handleTaskSelected}
               onError={setError}
+              initialUrl={heroSearchUrl}
             />
           </div>
 

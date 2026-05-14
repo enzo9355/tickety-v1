@@ -10,7 +10,7 @@ const steps = [
   { id: 4, title: "啟動監控" }
 ];
 
-export default function TaskInput({ onTaskAdded, onError }) {
+export default function TaskInput({ onTaskAdded, onError, initialUrl }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     url: '',
@@ -23,6 +23,12 @@ export default function TaskInput({ onTaskAdded, onError }) {
   
   const [submitState, setSubmitState] = useState('idle'); // idle | parsing | creating | success
   const [isLocating, setIsLocating] = useState(false);
+
+  useEffect(() => {
+    if (initialUrl && initialUrl !== formData.url) {
+      setFormData(prev => ({ ...prev, url: initialUrl }));
+    }
+  }, [initialUrl]);
 
   const handleLocate = () => {
     if (!navigator.geolocation) {

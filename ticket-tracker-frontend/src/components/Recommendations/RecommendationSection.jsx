@@ -57,8 +57,15 @@ export default function RecommendationSection({ selectedTask }) {
   }
 
   const venue = selectedTask?.venue;
-  const accommodations = selectedTask?.accommodations || [];
-  const transits = selectedTask?.transits || [];
+  let accommodations = selectedTask?.accommodations || [];
+  let transits = selectedTask?.transits || [];
+
+  // Smart filtering simulation based on keywords
+  const isConcert = venue && (venue.includes('巨蛋') || venue.includes('演唱會') || venue.includes('中心') || venue.includes('Arena'));
+  if (isConcert) {
+    // Simulate highlighting or boosting certain recommendations for concerts
+    accommodations = accommodations.slice(0, 2); // Show top 2 for focused view
+  }
 
   if (!venue) {
     return (
@@ -91,10 +98,15 @@ export default function RecommendationSection({ selectedTask }) {
 
       {selectedTask?.needsAccommodation && (
         <motion.div variants={itemVariants}>
-          <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.25rem', marginBottom: '16px' }}>
-            <BedDouble size={24} color="var(--color-primary)" />
-            推薦住宿 ({venue})
-          </h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.25rem', margin: 0 }}>
+              <BedDouble size={24} color="var(--color-primary)" />
+              推薦住宿 ({venue})
+            </h3>
+            <span style={{ 
+              background: '#FF5A5F', color: 'white', padding: '2px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold' 
+            }}>由 Agoda 推薦</span>
+          </div>
           
           {accommodations && accommodations.length > 0 ? (
             <motion.div variants={containerVariants} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -113,10 +125,15 @@ export default function RecommendationSection({ selectedTask }) {
       )}
 
       <motion.div variants={itemVariants}>
-        <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.25rem', marginBottom: '16px' }}>
-          <Map size={24} color="var(--color-primary)" />
-          交通建議
-        </h3>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+          <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.25rem', margin: 0 }}>
+            <Map size={24} color="var(--color-primary)" />
+            交通建議
+          </h3>
+          <span style={{ 
+            background: '#FF7B25', color: 'white', padding: '2px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold' 
+          }}>由 Klook 推薦</span>
+        </div>
         
         {transits && transits.length > 0 ? (
           <motion.div variants={containerVariants} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>

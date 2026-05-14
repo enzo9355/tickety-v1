@@ -68,104 +68,122 @@ export default function TaskList({ tasks, selectedTask, onTaskSelected }) {
 
   return (
     <div className="animate-fade-in animate-delay-1" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.1rem', paddingLeft: '8px' }}>
-        <Activity size={20} color="var(--color-primary)" />
+      <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.25rem', paddingLeft: '8px', marginBottom: '8px' }}>
+        <Activity size={24} color="var(--color-primary)" />
         執行中任務
       </h3>
       
-      {tasks.map((task) => {
-        const isActive = selectedTask?.id === task.id;
-        const isExpanded = expandedTaskId === task.id;
-        const isLogsExpanded = logExpandedTaskId === task.id;
-        
-        return (
-          <div 
-            key={task.id} 
-            className="glass-panel" 
-            onClick={() => onTaskSelected(task)}
-            style={{ 
-              padding: '20px', 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              alignItems: 'flex-start',
-              cursor: 'pointer',
-              border: isActive ? '1px solid var(--color-primary)' : '1px solid rgba(245, 239, 230, 0.08)',
-              background: isActive ? 'rgba(232, 86, 10, 0.05)' : 'rgba(255, 255, 255, 0.03)',
-              boxShadow: isActive ? '0 0 15px rgba(232, 86, 10, 0.2)' : '0 4px 30px rgba(0, 0, 0, 0.1)',
-              transition: 'all 0.2s ease'
-            }}
-          >
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', overflow: 'hidden', flex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <span style={{ 
-                  background: task.status === '監控中' ? 'rgba(232, 86, 10, 0.2)' : 'rgba(16, 185, 129, 0.2)', 
-                  color: task.status === '監控中' ? 'var(--color-secondary)' : 'var(--color-success)',
-                  padding: '4px 10px', 
-                  borderRadius: '12px', 
-                  fontSize: '0.75rem',
-                  fontWeight: '600',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px'
-                }}>
-                  {task.status === '監控中' ? <Clock size={12} /> : <CheckCircle2 size={12} />}
-                  {task.status || '監控中'}
-                </span>
-                <span style={{ color: 'var(--color-text-muted)', fontSize: '0.8rem' }}>
-                  {task.createdAt ? new Date(task.createdAt).toLocaleString() : new Date().toLocaleString()}
-                </span>
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', 
+        gap: '24px' 
+      }}>
+        {tasks.map((task) => {
+          const isActive = selectedTask?.id === task.id;
+          const isExpanded = expandedTaskId === task.id;
+          const isLogsExpanded = logExpandedTaskId === task.id;
+          
+          // Generate a deterministic image based on venue or URL length
+          const imgId = (task.id || 1) % 10 + 10;
+          const imageUrl = `https://images.unsplash.com/photo-1540039155732-d6824b2f155c?w=400&q=80`; // Generic concert
+          
+          return (
+            <div 
+              key={task.id} 
+              className="glass-panel" 
+              onClick={() => onTaskSelected(task)}
+              style={{ 
+                display: 'flex', 
+                flexDirection: 'column',
+                cursor: 'pointer',
+                overflow: 'hidden',
+                border: isActive ? '1px solid var(--color-primary)' : '1px solid rgba(245, 239, 230, 0.08)',
+                background: isActive ? 'rgba(232, 86, 10, 0.05)' : 'rgba(255, 255, 255, 0.03)',
+                boxShadow: isActive ? '0 0 15px rgba(232, 86, 10, 0.2)' : '0 4px 30px rgba(0, 0, 0, 0.1)',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                transform: isActive ? 'translateY(-4px)' : 'none'
+              }}
+            >
+              {/* Image Header */}
+              <div style={{ 
+                height: '140px', 
+                backgroundImage: `url(${imageUrl})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                position: 'relative'
+              }}>
+                <div style={{
+                  position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                  background: 'linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(30,20,16,0.9))'
+                }} />
+                <div style={{ position: 'absolute', top: '12px', right: '12px' }}>
+                  <span style={{ 
+                    background: task.status === '監控中' ? 'rgba(232, 86, 10, 0.9)' : 'rgba(16, 185, 129, 0.9)', 
+                    color: 'white',
+                    padding: '6px 12px', 
+                    borderRadius: '20px', 
+                    fontSize: '0.8rem',
+                    fontWeight: 'bold',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    boxShadow: '0 2px 10px rgba(0,0,0,0.3)'
+                  }}>
+                    {task.status === '監控中' ? <Clock size={14} /> : <CheckCircle2 size={14} />}
+                    {task.status || '監控中'}
+                  </span>
+                </div>
               </div>
-              
-              <a 
-                href={task.url} 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                onClick={(e) => e.stopPropagation()} 
-                style={{ color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '300px' }}
-              >
-                {task.url}
-              </a>
-              
-              <div style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem', display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap', marginTop: '8px' }}>
-                <span>✉ {task.email}</span>
-                {task.departure && <span>📍 由 {task.departure} 出發</span>}
+
+              {/* Content Body */}
+              <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px', flex: 1 }}>
+                <div style={{ color: 'var(--color-text-muted)', fontSize: '0.8rem' }}>
+                  建立於 {task.createdAt ? new Date(task.createdAt).toLocaleDateString() : new Date().toLocaleDateString()}
+                </div>
                 
-                <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
+                <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {task.venue || '未指定場館活動'}
+                </h4>
+                
+                <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--color-text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {task.url}
+                </p>
+                
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '4px' }}>
+                  {task.departure && <span style={{ fontSize: '0.8rem', padding: '4px 8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px' }}>📍 {task.departure}</span>}
+                  {task.budget && <span style={{ fontSize: '0.8rem', padding: '4px 8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px' }}>💰 ${task.budget}</span>}
+                </div>
+
+                <div style={{ marginTop: 'auto', paddingTop: '16px', display: 'flex', gap: '8px' }}>
                   <button 
                     onClick={(e) => toggleLogs(e, task.id)}
                     className="glass-button"
-                    style={{ background: 'transparent', border: '1px solid rgba(245,239,230,0.1)', color: 'var(--color-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '4px 8px', fontSize: '0.8rem', height: 'auto', borderRadius: '6px' }}
+                    style={{ flex: 1, padding: '8px', fontSize: '0.9rem', background: 'rgba(255,255,255,0.05)' }}
                   >
-                    <Terminal size={14} /> 日誌
+                    <Terminal size={16} /> 狀態日誌
                   </button>
-                  <button 
-                    onClick={(e) => toggleExpand(e, task.id)}
+                  <a 
+                    href={task.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={e => e.stopPropagation()}
                     className="glass-button"
-                    style={{ background: 'transparent', border: 'none', color: 'var(--color-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '0', height: 'auto' }}
+                    style={{ flex: 1, padding: '8px', fontSize: '0.9rem', textAlign: 'center', textDecoration: 'none', background: 'var(--color-primary)', color: 'white', border: 'none' }}
                   >
-                    詳細資訊 {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                  </button>
+                    快速查看
+                  </a>
                 </div>
+
+                {isLogsExpanded && (
+                  <div className="animate-fade-in" onClick={e => e.stopPropagation()}>
+                    <TaskLogTerminal isActive={task.status === '監控中'} />
+                  </div>
+                )}
               </div>
-
-              {isExpanded && (
-                <div className="animate-fade-in" style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(245,239,230,0.08)', fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>
-                  <p style={{ margin: '4px 0' }}><strong>建立時間：</strong> {task.createdAt ? new Date(task.createdAt).toLocaleString() : '未知'}</p>
-                  <p style={{ margin: '4px 0' }}><strong>出發地：</strong> {task.departure || '未填寫'}</p>
-                  <p style={{ margin: '4px 0' }}><strong>預算：</strong> {task.budget ? `$${task.budget}` : '未填寫'}</p>
-                  <p style={{ margin: '4px 0' }}><strong>目標場館：</strong> {task.venue || '系統自動解析'}</p>
-                </div>
-              )}
-
-              {isLogsExpanded && (
-                <div className="animate-fade-in">
-                  <TaskLogTerminal isActive={task.status === '監控中'} />
-                </div>
-              )}
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }
