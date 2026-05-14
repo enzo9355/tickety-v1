@@ -27,6 +27,8 @@ concerts_cache = {"data": [], "expires": None}
 scrape_lock = asyncio.Lock()
 notifications_cache = []
 
+MAX_CONCURRENT_TASKS = 5
+
 class BrowserManager:
     _instance = None
     _browser = None
@@ -385,6 +387,11 @@ async def get_concerts():
 
 @app.post("/tasks")
 async def create_task(task_data: TaskCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    # 檢查是否超過並行任務上限
+    active_tasks_count = db.query(database.Task).filter(database.Task.status == "監控中").count()
+    if active_tasks_count >= MAX_CONCURRENT_TASKS:
+        raise HTTPException(status_code=400, detail="伺服器負載已滿")
+
     # Save to database
     db_task = database.Task(
         url=str(task_data.url),
