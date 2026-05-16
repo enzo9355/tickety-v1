@@ -177,7 +177,7 @@ export default function TaskInput({ onTaskAdded, onError, initialUrl }) {
       <h2 style={{ fontSize: '1.4rem', fontWeight: 600, margin: 0 }}>{steps[currentStep - 1].title}</h2>
 
       {/* Form Content */}
-      <div style={{ position: 'relative', minHeight: '180px' }}>
+      <div style={{ position: 'relative' }}>
         <AnimatePresence mode="wait" custom={1}>
           <motion.div
             key={currentStep}
@@ -187,12 +187,12 @@ export default function TaskInput({ onTaskAdded, onError, initialUrl }) {
             animate="center"
             exit="exit"
             transition={{ duration: 0.2 }}
-            style={{ width: '100%', position: 'absolute' }}
+            style={{ width: '100%', position: 'relative' }}
           >
             {currentStep === 1 && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div style={{ position: 'relative' }}>
-                  <LinkIcon size={18} style={{ position: 'absolute', left: '16px', top: '14px', color: '#ADB5BD' }} />
+                  <LinkIcon size={18} style={{ position: 'absolute', left: '16px', top: '14px', color: 'var(--color-text-muted)' }} />
                   <input
                     type="url"
                     name="url"
@@ -211,7 +211,7 @@ export default function TaskInput({ onTaskAdded, onError, initialUrl }) {
             {currentStep === 2 && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div style={{ position: 'relative' }}>
-                  <MapPin size={18} style={{ position: 'absolute', left: '16px', top: '14px', color: '#ADB5BD' }} />
+                  <MapPin size={18} style={{ position: 'absolute', left: '16px', top: '14px', color: 'var(--color-text-muted)' }} />
                   <input
                     type="text"
                     name="venue"
@@ -224,7 +224,7 @@ export default function TaskInput({ onTaskAdded, onError, initialUrl }) {
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <div style={{ position: 'relative', flex: 1 }}>
-                    <MapPin size={18} style={{ position: 'absolute', left: '16px', top: '14px', color: '#ADB5BD' }} />
+                    <MapPin size={18} style={{ position: 'absolute', left: '16px', top: '14px', color: 'var(--color-text-muted)' }} />
                     <input
                       type="text"
                       name="departure"
@@ -251,7 +251,7 @@ export default function TaskInput({ onTaskAdded, onError, initialUrl }) {
             {currentStep === 3 && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div style={{ position: 'relative' }}>
-                  <DollarSign size={18} style={{ position: 'absolute', left: '16px', top: '14px', color: '#ADB5BD' }} />
+                  <DollarSign size={18} style={{ position: 'absolute', left: '16px', top: '14px', color: 'var(--color-text-muted)' }} />
                   <input
                     type="number"
                     name="budget"
@@ -279,7 +279,7 @@ export default function TaskInput({ onTaskAdded, onError, initialUrl }) {
             {currentStep === 4 && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div style={{ position: 'relative' }}>
-                  <Mail size={18} style={{ position: 'absolute', left: '16px', top: '14px', color: '#ADB5BD' }} />
+                  <Mail size={18} style={{ position: 'absolute', left: '16px', top: '14px', color: 'var(--color-text-muted)' }} />
                   <input
                     type="email"
                     name="email"
