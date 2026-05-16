@@ -15,10 +15,10 @@ const itemVariants = {
 function SkeletonConcertCard() {
   return (
     <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', opacity: 0.7 }}>
-      <div style={{ width: '100%', height: '140px', background: 'rgba(255,255,255,0.05)' }} className="animate-pulse" />
+      <div style={{ width: '100%', height: '140px', background: 'rgba(0,0,0,0.04)' }} className="animate-pulse" />
       <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        <div style={{ width: '80%', height: '16px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px' }} className="animate-pulse" />
-        <div style={{ width: '50%', height: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px' }} className="animate-pulse" />
+        <div style={{ width: '80%', height: '16px', background: 'rgba(0,0,0,0.04)', borderRadius: '4px' }} className="animate-pulse" />
+        <div style={{ width: '50%', height: '12px', background: 'rgba(0,0,0,0.04)', borderRadius: '4px' }} className="animate-pulse" />
       </div>
     </div>
   );

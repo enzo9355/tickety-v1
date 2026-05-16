@@ -31,7 +31,7 @@ export default function AccommodationCard({ hotel }) {
               target="_blank"
               rel="noopener noreferrer"
               className="glass-button"
-              style={{ padding: '4px 12px', fontSize: '0.85rem', width: 'auto', background: 'rgba(255,255,255,0.1)' }}
+              style={{ padding: '4px 12px', fontSize: '0.85rem', width: 'auto', background: 'rgba(0,0,0,0.05)', color: 'var(--color-text)' }}
             >
               查看/訂房
             </a>

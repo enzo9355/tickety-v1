@@ -22,10 +22,10 @@ const itemVariants = {
 function SkeletonCard() {
   return (
     <div className="glass-panel" style={{ padding: '20px', display: 'flex', gap: '16px', opacity: 0.7 }}>
-      <div style={{ width: '60px', height: '60px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)' }} className="animate-pulse" />
+      <div style={{ width: '60px', height: '60px', borderRadius: '12px', background: 'rgba(0,0,0,0.04)' }} className="animate-pulse" />
       <div style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: '12px', justifyContent: 'center' }}>
-        <div style={{ width: '60%', height: '16px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px' }} className="animate-pulse" />
-        <div style={{ width: '40%', height: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px' }} className="animate-pulse" />
+        <div style={{ width: '60%', height: '16px', background: 'rgba(0,0,0,0.04)', borderRadius: '4px' }} className="animate-pulse" />
+        <div style={{ width: '40%', height: '12px', background: 'rgba(0,0,0,0.04)', borderRadius: '4px' }} className="animate-pulse" />
       </div>
     </div>
   );
@@ -37,7 +37,7 @@ export default function RecommendationSection({ selectedTask }) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
         <div className="glass-panel" style={{ padding: '32px', textAlign: 'center', color: 'var(--color-text-muted)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-          <Info size={32} color="rgba(255,255,255,0.2)" />
+          <Info size={32} color="#5A626A" />
           <p>請在左側選擇或建立任務以查看智慧推薦</p>
         </div>
         

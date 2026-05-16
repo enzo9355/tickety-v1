@@ -48,17 +48,16 @@ export default function TransitCard({ route }) {
         <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '0' }}>
           {route.full_steps.map((step, idx) => (
             <div key={idx} style={{ display: 'flex', gap: '16px', position: 'relative', paddingBottom: idx !== route.full_steps.length - 1 ? '24px' : '0' }}>
-              {/* Timeline connecting line */}
               {idx !== route.full_steps.length - 1 && (
-                <div style={{ position: 'absolute', left: '15px', top: '30px', bottom: '0', width: '2px', background: 'rgba(255,255,255,0.1)' }} />
+                <div style={{ position: 'absolute', left: '15px', top: '30px', bottom: '0', width: '2px', background: 'rgba(0,0,0,0.1)' }} />
               )}
               
               <div style={{ 
                 width: '32px', 
                 height: '32px', 
                 borderRadius: '50%', 
-                background: 'rgba(255,255,255,0.05)',
-                border: '2px solid rgba(255,255,255,0.1)',
+                background: 'rgba(0,0,0,0.05)',
+                border: '2px solid rgba(0,0,0,0.1)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',

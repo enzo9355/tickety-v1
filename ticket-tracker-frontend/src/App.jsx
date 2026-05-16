@@ -139,7 +139,7 @@ function App() {
       <header style={{ marginBottom: '40px', textAlign: 'center', position: 'relative' }}>
         <div style={{
           position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-          width: '300px', height: '100px', background: 'radial-gradient(circle, rgba(232,86,10,0.15) 0%, rgba(242,169,59,0) 70%)',
+          width: '300px', height: '100px', background: 'none',
           filter: 'blur(20px)', zIndex: 0, pointerEvents: 'none'
         }} />
         <h1 className="animate-fade-in" style={{ position: 'relative', zIndex: 1, display: 'inline-flex', alignItems: 'center', gap: '12px', fontSize: '2.8rem', fontWeight: 700 }}>
