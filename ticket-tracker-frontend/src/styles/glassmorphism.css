@@ -1,16 +1,16 @@
 /* Glassmorphism Utilities */
 
 .glass-panel, .glass-card {
-  background: rgba(255, 255, 255, 0.85) !important;
+  background: rgba(255, 255, 255, 0.9) !important;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(0, 0, 0, 0.05) !important;
   border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
 }
 
-.glass-panel h1, .glass-panel h2, .glass-panel h3, .glass-panel p, .glass-panel span, .glass-panel div,
-.glass-card h1, .glass-card h2, .glass-card h3, .glass-card p, .glass-card span, .glass-card div {
+.glass-panel h1, .glass-panel h2, .glass-panel h3, .glass-panel p, .glass-panel span:not(.badge), .glass-panel div,
+.glass-card h1, .glass-card h2, .glass-card h3, .glass-card p, .glass-card span:not(.badge), .glass-card div {
   color: #212529 !important;
 }
 

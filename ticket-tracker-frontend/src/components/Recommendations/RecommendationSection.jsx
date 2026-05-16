@@ -103,8 +103,8 @@ export default function RecommendationSection({ selectedTask }) {
               <BedDouble size={24} color="var(--color-primary)" />
               推薦住宿 ({venue})
             </h3>
-            <span style={{ 
-              background: '#FF5A5F', color: 'white', padding: '2px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold' 
+            <span className="badge" style={{ 
+              background: '#FF5B00', color: '#FFFFFF', padding: '2px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold' 
             }}>由 Agoda 推薦</span>
           </div>
           
@@ -130,8 +130,8 @@ export default function RecommendationSection({ selectedTask }) {
             <Map size={24} color="var(--color-primary)" />
             交通建議
           </h3>
-          <span style={{ 
-            background: '#FF7B25', color: 'white', padding: '2px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold' 
+          <span className="badge" style={{ 
+            background: '#00B3CC', color: '#FFFFFF', padding: '2px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold' 
           }}>由 Klook 推薦</span>
         </div>
         

@@ -98,8 +98,8 @@ export default function TaskList({ tasks, selectedTask, onTaskSelected }) {
                 cursor: 'pointer',
                 overflow: 'hidden',
                 border: isActive ? '1px solid var(--color-primary)' : '1px solid rgba(0, 0, 0, 0.05)',
-                background: isActive ? 'rgba(255, 91, 0, 0.05)' : '#FFFFFF',
-                boxShadow: isActive ? '0 8px 30px rgba(255, 91, 0, 0.15)' : '0 4px 30px rgba(0, 0, 0, 0.04)',
+                background: isActive ? 'rgba(255, 91, 0, 0.05)' : 'rgba(255, 255, 255, 0.9)',
+                boxShadow: isActive ? '0 8px 30px rgba(255, 91, 0, 0.15)' : '0 4px 20px rgba(0, 0, 0, 0.08)',
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 transform: isActive ? 'translateY(-4px)' : 'none'
               }}
