@@ -47,6 +47,8 @@ function TaskLogTerminal({ isActive }) {
 export default function TaskList({ tasks, selectedTask, onTaskSelected }) {
   const [expandedTaskId, setExpandedTaskId] = useState(null);
   const [logExpandedTaskId, setLogExpandedTaskId] = useState(null);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [platformFilter, setPlatformFilter] = useState('all');
 
   const toggleExpand = (e, id) => {
     e.stopPropagation();
@@ -56,6 +58,33 @@ export default function TaskList({ tasks, selectedTask, onTaskSelected }) {
   const toggleLogs = (e, id) => {
     e.stopPropagation();
     setLogExpandedTaskId(prev => prev === id ? null : id);
+  };
+
+  // Detect platform from URL
+  const detectPlatform = (url) => {
+    if (!url) return '其他';
+    const lower = url.toLowerCase();
+    if (lower.includes('tixcraft')) return '拓元';
+    if (lower.includes('kktix')) return 'KKTIX';
+    if (lower.includes('ticketplus')) return 'TicketPlus';
+    return '其他';
+  };
+
+  // Get unique platforms from tasks
+  const platforms = [...new Set(tasks.map(t => detectPlatform(t.url)))];
+
+  // Apply filters
+  const filteredTasks = tasks.filter(task => {
+    const matchStatus = statusFilter === 'all' || task.status === statusFilter;
+    const matchPlatform = platformFilter === 'all' || detectPlatform(task.url) === platformFilter;
+    return matchStatus && matchPlatform;
+  });
+
+  const PLATFORM_COLORS = {
+    '拓元': '#FF5B00',
+    'KKTIX': '#00B3CC',
+    'TicketPlus': '#6C63FF',
+    '其他': '#5A626A'
   };
 
   if (!tasks || tasks.length === 0) {
@@ -68,17 +97,66 @@ export default function TaskList({ tasks, selectedTask, onTaskSelected }) {
 
   return (
     <div className="animate-fade-in animate-delay-1" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.25rem', paddingLeft: '8px', marginBottom: '8px' }}>
+      <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.25rem', paddingLeft: '8px', marginBottom: '0' }}>
         <Activity size={24} color="var(--color-primary)" />
         執行中任務
+        <span style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', fontWeight: 400 }}>({filteredTasks.length}/{tasks.length})</span>
       </h3>
+      
+      {/* Filter Bar */}
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', paddingLeft: '8px' }}>
+        {/* Status Filters */}
+        {['all', '監控中', '已發現'].map(status => (
+          <button
+            key={status}
+            onClick={() => setStatusFilter(status)}
+            style={{
+              padding: '4px 12px',
+              borderRadius: '20px',
+              border: statusFilter === status ? '1px solid var(--color-primary)' : '1px solid #E9ECEF',
+              background: statusFilter === status ? 'rgba(255, 91, 0, 0.08)' : '#FFFFFF',
+              color: statusFilter === status ? 'var(--color-primary)' : 'var(--color-text-muted)',
+              fontSize: '0.8rem',
+              fontWeight: 500,
+              cursor: 'pointer',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            {status === 'all' ? '全部狀態' : status}
+          </button>
+        ))}
+
+        {/* Divider */}
+        <div style={{ width: '1px', background: '#E9ECEF', margin: '0 4px' }} />
+
+        {/* Platform Filters */}
+        {platforms.map(platform => (
+          <button
+            key={platform}
+            onClick={() => setPlatformFilter(prev => prev === platform ? 'all' : platform)}
+            style={{
+              padding: '4px 12px',
+              borderRadius: '20px',
+              border: platformFilter === platform ? `1px solid ${PLATFORM_COLORS[platform]}` : '1px solid #E9ECEF',
+              background: platformFilter === platform ? `${PLATFORM_COLORS[platform]}12` : '#FFFFFF',
+              color: platformFilter === platform ? PLATFORM_COLORS[platform] : 'var(--color-text-muted)',
+              fontSize: '0.8rem',
+              fontWeight: 500,
+              cursor: 'pointer',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            {platform}
+          </button>
+        ))}
+      </div>
       
       <div style={{ 
         display: 'grid', 
         gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', 
         gap: '24px' 
       }}>
-        {tasks.map((task) => {
+        {filteredTasks.map((task) => {
           const isActive = selectedTask?.id === task.id;
           const isExpanded = expandedTaskId === task.id;
           const isLogsExpanded = logExpandedTaskId === task.id;

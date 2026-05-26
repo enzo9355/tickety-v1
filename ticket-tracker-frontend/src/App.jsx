@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import TaskPanel from './components/TaskTracking/TaskPanel';
 import RecommendationSection from './components/Recommendations/RecommendationSection';
+import CreditCardDeals from './components/Recommendations/CreditCardDeals';
+import VenueFacilities from './components/Recommendations/VenueFacilities';
 import ConcertSection from './components/Recommendations/ConcertSection';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Ticket, AlertCircle, X, Bell, ExternalLink, Search } from 'lucide-react';
@@ -260,6 +262,8 @@ function App() {
           {/* Right Column: Recommendations */}
           <div style={{ position: 'sticky', top: '40px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
             <RecommendationSection selectedTask={selectedTask} />
+            <VenueFacilities selectedTask={selectedTask} />
+            <CreditCardDeals selectedTask={selectedTask} />
             <ConcertSection concerts={concerts} />
           </div>
         </main>
