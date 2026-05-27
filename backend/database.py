@@ -40,4 +40,8 @@ class TicketRecord(Base):
     raw_text = Column(String, nullable=True)      # Full raw text for display
     detected_at = Column(DateTime, default=datetime.datetime.utcnow)
 
-Base.metadata.create_all(bind=engine)
+try:
+    Base.metadata.create_all(bind=engine)
+except Exception as e:
+    print(f"[Database] Warning: create_all encountered an error: {e}")
+    # Tables that already exist will be fine; new tables may fail if DB is unreachable
