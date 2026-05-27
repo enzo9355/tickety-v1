@@ -156,6 +156,63 @@ async def check_ticket_status(task_id: int, url: str, to_email: str):
 
                 title = await page.title()
                 
+                # === DOM-based ticket detection (for tixcraft, KKTIX, etc.) ===
+                # These platforms render ticket info directly in HTML, not via API
+                if not ticket_found:
+                    try:
+                        page_content = await page.content()
+                        
+                        # Pattern 1: tixcraft — "剩餘 X" (remaining X)
+                        remaining_matches = re.findall(
+                            r'([A-Za-z0-9\u4e00-\u9fff]+?區?)\s*(\d{3,5})\s*剩餘\s*(\d+)',
+                            page_content
+                        )
+                        if remaining_matches:
+                            ticket_found = True
+                            for match in remaining_matches:
+                                zone_str = match[0].strip()
+                                price_val = float(match[1])
+                                remaining_val = int(match[2])
+                                if remaining_val > 0:
+                                    found_tickets_data.append({
+                                        "zone": zone_str,
+                                        "price": price_val,
+                                        "remaining": remaining_val
+                                    })
+                            print(f"[Task {task_id}] DOM 偵測到 {len(remaining_matches)} 筆票券 (剩餘模式)")
+                        
+                        # Pattern 2: Generic — keywords like "立即購票", "可購買", "on sale"
+                        if not ticket_found:
+                            buy_keywords = ["立即購票", "加入購物車", "可購買", "Buy Now", "Add to Cart", "選擇座位"]
+                            for kw in buy_keywords:
+                                if kw in page_content:
+                                    ticket_found = True
+                                    found_tickets_data.append({
+                                        "zone": "",
+                                        "price": 0,
+                                        "remaining": 1
+                                    })
+                                    print(f"[Task {task_id}] DOM 偵測到購票關鍵字: {kw}")
+                                    break
+                        
+                        # Pattern 3: tixcraft area page — "熱賣中" means sold out, but any remaining number means available
+                        if not ticket_found and "tixcraft" in url.lower():
+                            # Check if we're on the area selection page
+                            area_remaining = re.findall(r'剩餘\s*(\d+)', page_content)
+                            if area_remaining:
+                                total_remaining = sum(int(x) for x in area_remaining)
+                                if total_remaining > 0:
+                                    ticket_found = True
+                                    found_tickets_data.append({
+                                        "zone": "多區域",
+                                        "price": 0,
+                                        "remaining": total_remaining
+                                    })
+                                    print(f"[Task {task_id}] tixcraft 區域頁偵測到總剩餘: {total_remaining}")
+                        
+                    except Exception as dom_err:
+                        print(f"[Task {task_id}] DOM 解析錯誤 (非致命): {dom_err}")
+                
                 if ticket_found:
                     print(f"[Task {task_id}] 偵測到釋票特徵！寄送通知並停止監控。")
                     email_service.send_ticket_alert(to_email, url)

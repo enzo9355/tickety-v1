@@ -32,11 +32,11 @@ function TaskLogTerminal({ isActive }) {
   if (!isActive) return null;
 
   return (
-    <div style={{ marginTop: '16px', background: '#0a0a0f', borderRadius: '8px', padding: '12px', border: '1px solid rgba(245,239,230,0.08)', maxHeight: '150px', overflowY: 'auto', fontFamily: 'monospace' }}>
+    <div style={{ marginTop: '16px', background: '#F0F2F5', borderRadius: '8px', padding: '12px', border: '1px solid #E9ECEF', maxHeight: '150px', overflowY: 'auto', fontFamily: 'monospace' }}>
       {logs.map((log) => (
-        <div key={log.id} style={{ color: '#39FF14', fontSize: '0.8rem', marginBottom: '4px', display: 'flex', gap: '8px' }}>
-          <span style={{ color: 'var(--color-text-muted)' }}>[{log.time}]</span>
-          <span>{log.text}</span>
+        <div key={log.id} style={{ color: '#212529', fontSize: '0.8rem', marginBottom: '4px', display: 'flex', gap: '8px' }}>
+          <span style={{ color: '#5A626A' }}>[{log.time}]</span>
+          <span style={{ color: 'var(--color-primary)' }}>{log.text}</span>
         </div>
       ))}
       <div ref={bottomRef} />
@@ -192,7 +192,7 @@ export default function TaskList({ tasks, selectedTask, onTaskSelected }) {
               }}>
                 <div style={{
                   position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                  background: 'linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(30,20,16,0.9))'
+                  background: 'linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0.85))'
                 }} />
                 <div style={{ position: 'absolute', top: '12px', right: '12px' }}>
                   <span style={{ 
