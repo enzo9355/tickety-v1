@@ -4,6 +4,7 @@ import TaskPanel from './components/TaskTracking/TaskPanel';
 import RecommendationSection from './components/Recommendations/RecommendationSection';
 import CreditCardDeals from './components/Recommendations/CreditCardDeals';
 import VenueFacilities from './components/Recommendations/VenueFacilities';
+import TicketHistory from './components/TaskTracking/TicketHistory';
 import ConcertSection from './components/Recommendations/ConcertSection';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Ticket, AlertCircle, X, Bell, ExternalLink, Search } from 'lucide-react';
@@ -261,6 +262,9 @@ function App() {
 
           {/* Right Column: Recommendations */}
           <div style={{ position: 'sticky', top: '40px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
+            {selectedTask && (
+              <TicketHistory taskId={selectedTask.id} taskStatus={selectedTask.status} />
+            )}
             <RecommendationSection selectedTask={selectedTask} />
             <VenueFacilities selectedTask={selectedTask} />
             <CreditCardDeals selectedTask={selectedTask} />

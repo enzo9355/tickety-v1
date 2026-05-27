@@ -86,26 +86,47 @@ async def check_ticket_status(task_id: int, url: str, to_email: str):
                 await stealth_async(page)
                 
                 ticket_found = False
+                found_tickets_data = []
                 
                 async def handle_response(response):
-                    nonlocal ticket_found
+                    nonlocal ticket_found, found_tickets_data
                     if "api/v1/tickets" in response.url or "ticket" in response.url.lower() or "events" in response.url.lower():
                         if "application/json" in response.headers.get("content-type", ""):
                             try:
                                 json_data = await response.json()
-                                def check_purchasable(data):
+                                def check_purchasable(data, path=""):
+                                    results = []
                                     if isinstance(data, dict):
                                         status = data.get("status")
                                         if status in ["available", "on_sale", "purchasable", True, 1, "1", "OK", "BUY", "立即購票"]:
-                                            return True
+                                            # Extract ticket info
+                                            zone = data.get("area") or data.get("zone") or data.get("section") or data.get("name") or ""
+                                            price = data.get("price") or data.get("amount") or 0
+                                            remaining = data.get("remaining") or data.get("count") or data.get("quantity") or 1
+                                            try:
+                                                price = float(price)
+                                            except (ValueError, TypeError):
+                                                price = 0
+                                            try:
+                                                remaining = int(remaining)
+                                            except (ValueError, TypeError):
+                                                remaining = 1
+                                            results.append({
+                                                "zone": str(zone),
+                                                "price": price,
+                                                "remaining": remaining
+                                            })
                                         for v in data.values():
-                                            if check_purchasable(v): return True
+                                            results.extend(check_purchasable(v))
                                     elif isinstance(data, list):
                                         for item in data:
-                                            if check_purchasable(item): return True
-                                    return False
-                                if check_purchasable(json_data):
+                                            results.extend(check_purchasable(item))
+                                    return results
+                                
+                                ticket_results = check_purchasable(json_data)
+                                if ticket_results:
                                     ticket_found = True
+                                    found_tickets_data.extend(ticket_results)
                             except Exception:
                                 pass
 
@@ -139,6 +160,44 @@ async def check_ticket_status(task_id: int, url: str, to_email: str):
                     print(f"[Task {task_id}] 偵測到釋票特徵！寄送通知並停止監控。")
                     email_service.send_ticket_alert(to_email, url)
                     
+                    # Save ticket records to database
+                    db = database.SessionLocal()
+                    try:
+                        now = datetime.now()
+                        if found_tickets_data:
+                            for tdata in found_tickets_data:
+                                zone_str = tdata.get("zone", "")
+                                price_val = tdata.get("price", 0)
+                                remaining_val = tdata.get("remaining", 1)
+                                raw = f"{zone_str} {int(price_val)} 剩餘 {remaining_val}" if zone_str else f"價格 {int(price_val)} 剩餘 {remaining_val}"
+                                record = database.TicketRecord(
+                                    task_id=task_id,
+                                    zone=zone_str or None,
+                                    price=price_val,
+                                    remaining=remaining_val,
+                                    raw_text=raw,
+                                    detected_at=now
+                                )
+                                db.add(record)
+                        else:
+                            # Generic record when we detected availability but couldn't parse details
+                            record = database.TicketRecord(
+                                task_id=task_id,
+                                zone=None,
+                                price=None,
+                                remaining=None,
+                                raw_text="偵測到可購買票券",
+                                detected_at=now
+                            )
+                            db.add(record)
+                        
+                        db_task = db.query(database.Task).filter(database.Task.id == task_id).first()
+                        if db_task:
+                            db_task.status = "已通知"
+                        db.commit()
+                    finally:
+                        db.close()
+                    
                     notifications_cache.append({
                         "id": f"notif_{task_id}_{int(datetime.now().timestamp())}",
                         "task_id": task_id,
@@ -148,15 +207,6 @@ async def check_ticket_status(task_id: int, url: str, to_email: str):
                         "timestamp": datetime.now().isoformat()
                     })
                     
-                    db = database.SessionLocal()
-                    try:
-                        db_task = db.query(database.Task).filter(database.Task.id == task_id).first()
-                        if db_task:
-                            db_task.status = "已通知"
-                            db.commit()
-                    finally:
-                        db.close()
-                        
                     if task_id in task_error_counts:
                         del task_error_counts[task_id]
                     return
@@ -239,6 +289,23 @@ class TaskCreate(BaseModel):
     departure: Optional[str] = None
     budget: Optional[int] = Field(None, ge=0)
     needsAccommodation: bool = False
+
+@app.get("/api/tasks/{task_id}/ticket-records")
+def get_ticket_records(task_id: int, db: Session = Depends(get_db)):
+    """Get ticket availability history for a specific task"""
+    records = db.query(database.TicketRecord).filter(
+        database.TicketRecord.task_id == task_id
+    ).order_by(database.TicketRecord.detected_at.desc()).limit(50).all()
+    
+    return [{
+        "id": r.id,
+        "task_id": r.task_id,
+        "zone": r.zone,
+        "price": r.price,
+        "remaining": r.remaining,
+        "raw_text": r.raw_text,
+        "detected_at": r.detected_at.isoformat() if r.detected_at else None
+    } for r in records]
 
 @app.get("/api/reverse-geocode")
 def reverse_geocode(lat: float, lng: float):

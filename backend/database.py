@@ -1,5 +1,5 @@
 import os
-from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime
+from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime, Float, ForeignKey
 from sqlalchemy.orm import declarative_base, sessionmaker
 import datetime
 
@@ -28,5 +28,16 @@ class Task(Base):
     needs_accommodation = Column(Boolean, default=False)
     status = Column(String, default="監控中")
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+class TicketRecord(Base):
+    __tablename__ = "ticket_records"
+
+    id = Column(Integer, primary_key=True, index=True)
+    task_id = Column(Integer, ForeignKey("tasks.id"), index=True)
+    zone = Column(String, nullable=True)         # e.g. "綠212區"
+    price = Column(Float, nullable=True)          # e.g. 4880
+    remaining = Column(Integer, nullable=True)    # e.g. 1
+    raw_text = Column(String, nullable=True)      # Full raw text for display
+    detected_at = Column(DateTime, default=datetime.datetime.utcnow)
 
 Base.metadata.create_all(bind=engine)
