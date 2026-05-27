@@ -15,7 +15,7 @@ function TaskLogTerminal({ isActive }) {
     const interval = setInterval(() => {
       setLogs(prev => {
         const timeStr = new Date().toLocaleTimeString();
-        const newLog = { id: Date.now(), time: timeStr, text: "檢查售票狀態... 尚無餘票" };
+        const newLog = { id: Date.now(), time: timeStr, text: "持續在背景分析網頁內容與售票狀態..." };
         const updated = [...prev, newLog];
         if (updated.length > 20) return updated.slice(updated.length - 20);
         return updated;
