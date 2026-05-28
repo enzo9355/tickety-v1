@@ -4,355 +4,239 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel, HttpUrl, EmailStr, Field
 from typing import Optional
 import os
-import requests
-from bs4 import BeautifulSoup
 import re
 import math
 import random
 import httpx
-import psutil
+from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 from contextlib import asynccontextmanager
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from playwright.async_api import async_playwright
 import asyncio
-from playwright_stealth import stealth_async
 
 import database
 import email_service
 
 scheduler = AsyncIOScheduler()
 task_error_counts = {}
-concerts_cache = {"data": [], "expires": None}
-scrape_lock = asyncio.Lock()
 notifications_cache = []
 
 MAX_CONCURRENT_TASKS = 5
 
-class BrowserManager:
-    _instance = None
-    _browser = None
-    _playwright = None
+# --- Lightweight HTTP-based ticket checker (no Playwright/Chromium) ---
 
-    @classmethod
-    async def get_browser(cls):
-        if cls._browser is None:
-            cls._playwright = await async_playwright().start()
-            cls._browser = await cls._playwright.chromium.launch(
-                headless=True,
-                args=[
-                    "--disable-gpu",
-                    "--no-sandbox",
-                    "--disable-dev-shm-usage",
-                ]
-            )
-        return cls._browser
-
-    @classmethod
-    async def close(cls):
-        if cls._browser:
-            await cls._browser.close()
-            cls._browser = None
-        if cls._playwright:
-            await cls._playwright.stop()
-            cls._playwright = None
-
-    @classmethod
-    def get_page_count(cls):
-        count = 0
-        if cls._browser:
-            for context in cls._browser.contexts:
-                count += len(context.pages)
-        return count
-
-async def block_resources(route):
-    if route.request.resource_type in ["image", "stylesheet", "font", "media"]:
-        await route.abort()
-    else:
-        await route.continue_()
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7",
+    "Accept-Encoding": "gzip, deflate, br",
+}
 
 async def check_ticket_status(task_id: int, url: str, to_email: str):
+    """Lightweight ticket checker using httpx instead of Playwright."""
     try:
-        async with scrape_lock:
-            browser = await BrowserManager.get_browser()
-            context = await browser.new_context(
-                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-                viewport={"width": 1280, "height": 800},
-                locale="zh-TW"
-            )
-            try:
-                await context.route("**/*", block_resources)
-                page = await context.new_page()
-                await stealth_async(page)
-                
-                ticket_found = False
-                found_tickets_data = []
-                
-                async def handle_response(response):
-                    nonlocal ticket_found, found_tickets_data
-                    if "api/v1/tickets" in response.url or "ticket" in response.url.lower() or "events" in response.url.lower():
-                        if "application/json" in response.headers.get("content-type", ""):
-                            try:
-                                json_data = await response.json()
-                                def check_purchasable(data, path=""):
-                                    results = []
-                                    if isinstance(data, dict):
-                                        status = data.get("status")
-                                        if status in ["available", "on_sale", "purchasable", True, 1, "1", "OK", "BUY", "立即購票"]:
-                                            # Extract ticket info
-                                            zone = data.get("area") or data.get("zone") or data.get("section") or data.get("name") or ""
-                                            price = data.get("price") or data.get("amount") or 0
-                                            remaining = data.get("remaining") or data.get("count") or data.get("quantity") or 1
-                                            try:
-                                                price = float(price)
-                                            except (ValueError, TypeError):
-                                                price = 0
-                                            try:
-                                                remaining = int(remaining)
-                                            except (ValueError, TypeError):
-                                                remaining = 1
-                                            results.append({
-                                                "zone": str(zone),
-                                                "price": price,
-                                                "remaining": remaining
-                                            })
-                                        for v in data.values():
-                                            results.extend(check_purchasable(v))
-                                    elif isinstance(data, list):
-                                        for item in data:
-                                            results.extend(check_purchasable(item))
-                                    return results
-                                
-                                ticket_results = check_purchasable(json_data)
-                                if ticket_results:
-                                    ticket_found = True
-                                    found_tickets_data.extend(ticket_results)
-                            except Exception:
-                                pass
+        ticket_found = False
+        found_tickets_data = []
 
-                page.on("response", handle_response)
-                
-                response = await page.goto(url, wait_until="networkidle", timeout=15000)
-                await asyncio.sleep(random.uniform(2, 5))
-                
-                if response and response.status in [403, 429]:
-                    task_error_counts[task_id] = task_error_counts.get(task_id, 0) + 1
-                    if task_error_counts[task_id] >= 3:
-                        print(f"[Task {task_id}] 遭到封鎖 ({response.status}) 達 3 次，將下次檢查延後 30 分鐘。")
-                        next_run = datetime.now() + timedelta(seconds=1800)
-                    else:
-                        print(f"[Task {task_id}] 遭到封鎖 ({response.status})，累計 {task_error_counts[task_id]} 次。")
-                        next_run = datetime.now() + timedelta(seconds=random.randint(30, 90))
-                    
-                    scheduler.add_job(
-                        check_ticket_status,
-                        'date',
-                        run_date=next_run,
-                        args=[task_id, url, to_email],
-                        id=f"task_{task_id}",
-                        replace_existing=True
-                    )
-                    return
+        async with httpx.AsyncClient(headers=HEADERS, follow_redirects=True, timeout=15) as client:
+            resp = await client.get(url)
 
-                title = await page.title()
-                
-                # === DOM-based ticket detection (for tixcraft, KKTIX, etc.) ===
-                # These platforms render ticket info directly in HTML, not via API
-                if not ticket_found:
-                    try:
-                        page_content = await page.content()
-                        
-                        # Strip HTML tags to get clean text like "1樓特B區8800 3 seat(s) remaining" or "1樓特B區8800 剩餘 3"
-                        soup = BeautifulSoup(page_content, 'html.parser')
-                        plain_text = soup.get_text(separator=' ')
-                        
-                        # Pattern 1: tixcraft — "剩餘 X" or "X seat(s) remaining"
-                        # E.g., "1樓特B區8800 3 seat(s) remaining" or "1樓特B區8800 剩餘 3"
-                        remaining_matches = re.findall(
-                            r'([A-Za-z0-9\u4e00-\u9fff]+?區?)\s*(\d{3,5})\s*(?:剩餘\s*(\d+)|\s*(\d+)\s*seat\(s\)\s*remaining)',
-                            plain_text
-                        )
-                        
-                        if remaining_matches:
-                            ticket_found = True
-                            for match in remaining_matches:
-                                zone_str = match[0].strip()
-                                price_val = float(match[1])
-                                # match[2] is ZH remaining, match[3] is EN remaining
-                                remaining_val = int(match[2] or match[3] or 0)
-                                if remaining_val > 0:
-                                    found_tickets_data.append({
-                                        "zone": zone_str,
-                                        "price": price_val,
-                                        "remaining": remaining_val
-                                    })
-                            print(f"[Task {task_id}] DOM 偵測到 {len(remaining_matches)} 筆票券 (剩餘模式)")
-                            
-                        # Pattern 2: Generic — keywords like "立即購票", "可購買", "Available", "熱賣中"
-                        if not ticket_found:
-                            # Tixcraft uses "Available" or "熱賣中" for sections that have tickets but no specific number
-                            available_matches = re.findall(
-                                r'([A-Za-z0-9\u4e00-\u9fff]+?區?)\s*(\d{3,5})\s*(?:Available|熱賣中)',
-                                plain_text
-                            )
-                            if available_matches:
-                                ticket_found = True
-                                for match in available_matches:
-                                    found_tickets_data.append({
-                                        "zone": match[0].strip(),
-                                        "price": float(match[1]),
-                                        "remaining": 1  # exact number unknown
-                                    })
-                                print(f"[Task {task_id}] DOM 偵測到 {len(available_matches)} 筆票券 (熱賣中/Available)")
-                                
-                        # Pattern 3: Global keywords as last resort
-                        if not ticket_found:
-                            buy_keywords = ["立即購票", "加入購物車", "選擇座位"]
-                            for kw in buy_keywords:
-                                if kw in plain_text:
-                                    ticket_found = True
-                                    found_tickets_data.append({
-                                        "zone": "",
-                                        "price": 0,
-                                        "remaining": 1
-                                    })
-                                    print(f"[Task {task_id}] DOM 偵測到購票關鍵字: {kw}")
-                                    break
-                        
-                        # Pattern 4: tixcraft area page — global remaining
-                        if not ticket_found and "tixcraft" in url.lower():
-                            area_remaining = re.findall(r'剩餘\s*(\d+)|\s*(\d+)\s*seat\(s\)\s*remaining', plain_text)
-                            if area_remaining:
-                                total_remaining = sum(int(x[0] or x[1] or 0) for x in area_remaining)
-                                if total_remaining > 0:
-                                    ticket_found = True
-                                    found_tickets_data.append({
-                                        "zone": "多區域",
-                                        "price": 0,
-                                        "remaining": total_remaining
-                                    })
-                                    print(f"[Task {task_id}] tixcraft 區域頁偵測到總剩餘: {total_remaining}")
-                        
-                    except Exception as dom_err:
-                        print(f"[Task {task_id}] DOM 解析錯誤 (非致命): {dom_err}")
-                
-                if ticket_found:
-                    print(f"[Task {task_id}] 偵測到釋票特徵！寄送通知並停止監控。")
-                    email_service.send_ticket_alert(to_email, url)
-                    
-                    # Save ticket records to database
-                    db = database.SessionLocal()
-                    try:
-                        now = datetime.now()
-                        if found_tickets_data:
-                            for tdata in found_tickets_data:
-                                zone_str = tdata.get("zone", "")
-                                price_val = tdata.get("price", 0)
-                                remaining_val = tdata.get("remaining", 1)
-                                raw = f"{zone_str} {int(price_val)} 剩餘 {remaining_val}" if zone_str else f"價格 {int(price_val)} 剩餘 {remaining_val}"
-                                record = database.TicketRecord(
-                                    task_id=task_id,
-                                    zone=zone_str or None,
-                                    price=price_val,
-                                    remaining=remaining_val,
-                                    raw_text=raw,
-                                    detected_at=now
-                                )
-                                db.add(record)
-                        else:
-                            # Generic record when we detected availability but couldn't parse details
-                            record = database.TicketRecord(
-                                task_id=task_id,
-                                zone=None,
-                                price=None,
-                                remaining=None,
-                                raw_text="偵測到可購買票券",
-                                detected_at=now
-                            )
-                            db.add(record)
-                        
-                        db_task = db.query(database.Task).filter(database.Task.id == task_id).first()
-                        if db_task:
-                            db_task.status = "已通知"
-                        db.commit()
-                    finally:
-                        db.close()
-                    
-                    notifications_cache.append({
-                        "id": f"notif_{task_id}_{int(datetime.now().timestamp())}",
-                        "task_id": task_id,
-                        "title": title or "未知活動",
-                        "time": "請至購票網頁查看",
-                        "url": url,
-                        "timestamp": datetime.now().isoformat()
-                    })
-                    
-                    if task_id in task_error_counts:
-                        del task_error_counts[task_id]
-                    return
+            if resp.status_code in (403, 429):
+                task_error_counts[task_id] = task_error_counts.get(task_id, 0) + 1
+                if task_error_counts[task_id] >= 3:
+                    print(f"[Task {task_id}] 遭到封鎖 ({resp.status_code}) 達 3 次，延後 30 分鐘。")
+                    delay = 1800
                 else:
-                    task_error_counts[task_id] = 0
-                    next_run = datetime.now() + timedelta(seconds=random.randint(30, 90))
-                    print(f"[Task {task_id}] 未偵測到票券，下次檢查時間: {next_run.strftime('%H:%M:%S')}")
-                    scheduler.add_job(
-                        check_ticket_status,
-                        'date',
-                        run_date=next_run,
-                        args=[task_id, url, to_email],
-                        id=f"task_{task_id}",
-                        replace_existing=True
-                    )
+                    print(f"[Task {task_id}] 遭到封鎖 ({resp.status_code})，累計 {task_error_counts[task_id]} 次。")
+                    delay = random.randint(60, 180)
+
+                scheduler.add_job(
+                    check_ticket_status, 'date',
+                    run_date=datetime.now() + timedelta(seconds=delay),
+                    args=[task_id, url, to_email],
+                    id=f"task_{task_id}", replace_existing=True
+                )
+                return
+
+            soup = BeautifulSoup(resp.text, 'html.parser')
+            title = soup.title.string.strip() if soup.title and soup.title.string else "未知活動"
+            plain_text = soup.get_text(separator=' ')
+
+            # === Pattern 1: tixcraft — "X seat(s) remaining" ===
+            remaining_en = re.findall(
+                r'(\d+)\s*seat\(s\)\s*remaining',
+                plain_text
+            )
+            if remaining_en:
+                ticket_found = True
+                for seats in remaining_en:
+                    found_tickets_data.append({
+                        "zone": "", "price": 0, "remaining": int(seats)
+                    })
+                print(f"[Task {task_id}] 偵測到 {len(remaining_en)} 筆 (seat(s) remaining)")
+
+            # === Pattern 2: tixcraft — "剩餘 X" (Chinese locale) ===
+            if not ticket_found:
+                remaining_zh = re.findall(r'剩餘\s*(\d+)', plain_text)
+                if remaining_zh:
+                    ticket_found = True
+                    for seats in remaining_zh:
+                        found_tickets_data.append({
+                            "zone": "", "price": 0, "remaining": int(seats)
+                        })
+                    print(f"[Task {task_id}] 偵測到 {len(remaining_zh)} 筆 (剩餘模式)")
+
+            # === Pattern 3: tixcraft — "Available" keyword ===
+            if not ticket_found:
+                avail_count = plain_text.count('Available')
+                if avail_count > 0 and 'Sold out' in plain_text:
+                    # Page has both available and sold out — real ticket area page
+                    ticket_found = True
+                    found_tickets_data.append({
+                        "zone": "多區域", "price": 0, "remaining": avail_count
+                    })
+                    print(f"[Task {task_id}] 偵測到 {avail_count} 區可購 (Available)")
+
+            # === Pattern 4: KKTIX — parse ticket JSON in page ===
+            if not ticket_found and "kktix" in url.lower():
+                inventory_match = re.findall(r'"inventory"\s*:\s*(\d+)', resp.text)
+                if inventory_match:
+                    total = sum(int(x) for x in inventory_match)
+                    if total > 0:
+                        ticket_found = True
+                        found_tickets_data.append({
+                            "zone": "KKTIX", "price": 0, "remaining": total
+                        })
+                        print(f"[Task {task_id}] KKTIX inventory 偵測到 {total} 張")
+
+            # === Pattern 5: Generic buy keywords ===
+            if not ticket_found:
+                for kw in ["立即購票", "加入購物車", "選擇座位", "Buy Now"]:
+                    if kw in plain_text:
+                        ticket_found = True
+                        found_tickets_data.append({
+                            "zone": "", "price": 0, "remaining": 1
+                        })
+                        print(f"[Task {task_id}] 偵測到購票關鍵字: {kw}")
+                        break
+
+        # --- Process results ---
+        if ticket_found:
+            print(f"[Task {task_id}] 偵測到釋票特徵！寄送通知。")
+            email_service.send_ticket_alert(to_email, url)
+
+            db = database.SessionLocal()
+            try:
+                now = datetime.now()
+                if found_tickets_data:
+                    for td in found_tickets_data:
+                        z = td.get("zone", "")
+                        p = td.get("price", 0)
+                        r = td.get("remaining", 1)
+                        raw = f"{z} 剩餘 {r}" if z else f"偵測到 {r} 張可購票券"
+                        db.add(database.TicketRecord(
+                            task_id=task_id, zone=z or None,
+                            price=p, remaining=r,
+                            raw_text=raw, detected_at=now
+                        ))
+                else:
+                    db.add(database.TicketRecord(
+                        task_id=task_id, zone=None, price=None,
+                        remaining=None, raw_text="偵測到可購買票券", detected_at=now
+                    ))
+
+                db_task = db.query(database.Task).filter(database.Task.id == task_id).first()
+                if db_task:
+                    db_task.status = "已通知"
+                db.commit()
             finally:
-                await context.close()
+                db.close()
+
+            notifications_cache.append({
+                "id": f"notif_{task_id}_{int(datetime.now().timestamp())}",
+                "task_id": task_id, "title": title,
+                "time": "請至購票網頁查看", "url": url,
+                "timestamp": datetime.now().isoformat()
+            })
+            task_error_counts.pop(task_id, None)
+            return
+
+        # Not found — schedule next check
+        task_error_counts[task_id] = 0
+        delay = random.randint(30, 90)
+        print(f"[Task {task_id}] 未偵測到票券，{delay}s 後再檢查。")
+        scheduler.add_job(
+            check_ticket_status, 'date',
+            run_date=datetime.now() + timedelta(seconds=delay),
+            args=[task_id, url, to_email],
+            id=f"task_{task_id}", replace_existing=True
+        )
 
     except Exception as e:
-        print(f"[Task {task_id}] Playwright Scraper 例外錯誤: {e}")
-        next_run = datetime.now() + timedelta(seconds=random.randint(30, 90))
+        print(f"[Task {task_id}] 檢查例外: {e}")
         scheduler.add_job(
-            check_ticket_status,
-            'date',
-            run_date=next_run,
+            check_ticket_status, 'date',
+            run_date=datetime.now() + timedelta(seconds=random.randint(60, 120)),
             args=[task_id, url, to_email],
-            id=f"task_{task_id}",
-            replace_existing=True
+            id=f"task_{task_id}", replace_existing=True
         )
+
+
+# --- Lightweight venue detection from page HTML ---
+
+async def detect_venue_from_url(url: str) -> str:
+    """Extract venue name from page title/body via HTTP (no browser)."""
+    fallback = "活動場館"
+    try:
+        async with httpx.AsyncClient(headers=HEADERS, follow_redirects=True, timeout=10) as client:
+            resp = await client.get(url)
+            if resp.status_code != 200:
+                return fallback
+
+            text = resp.text[:20000]  # Only scan first 20KB for speed
+            venues = [
+                "高雄巨蛋", "台北小巨蛋", "台北大巨蛋", "台北流行音樂中心",
+                "高雄流行音樂中心", "高雄世運主場館", "台北國際會議中心",
+                "新北工商展覽中心", "桃園會展中心", "台中洲際棒球場",
+            ]
+            for v in venues:
+                if v in text:
+                    return v
+            return fallback
+    except Exception:
+        return fallback
+
+
+# --- App lifecycle ---
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("Starting APScheduler...")
     scheduler.start()
-    
-    # Optional: 可以從資料庫讀取 status="監控中" 的任務並重新加入排程
     db = database.SessionLocal()
     try:
-        active_tasks = db.query(database.Task).filter(database.Task.status == "監控中").all()
-        for t in active_tasks:
-            # 隨機 5~300 秒內錯開啟動，避免伺服器重啟時同時發送大量請求
-            start_delay = random.randint(5, 300)
+        active = db.query(database.Task).filter(database.Task.status == "監控中").all()
+        for t in active:
+            delay = random.randint(5, 120)
             scheduler.add_job(
-                check_ticket_status,
-                'date',
-                run_date=datetime.now() + timedelta(seconds=start_delay),
+                check_ticket_status, 'date',
+                run_date=datetime.now() + timedelta(seconds=delay),
                 args=[t.id, t.url, t.email],
-                id=f"task_{t.id}",
-                replace_existing=True
+                id=f"task_{t.id}", replace_existing=True
             )
-        print(f"Resumed {len(active_tasks)} active tasks.")
+        print(f"Resumed {len(active)} active tasks.")
     finally:
         db.close()
-        
     yield
-    print("Shutting down APScheduler and Browser...")
+    print("Shutting down APScheduler...")
     scheduler.shutdown()
-    await BrowserManager.close()
+
 
 app = FastAPI(title="Tickety Backend API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=["*"], allow_methods=["*"], allow_headers=["*"],
 )
 
 def get_db():
@@ -362,6 +246,9 @@ def get_db():
     finally:
         db.close()
 
+
+# --- Pydantic models ---
+
 class TaskCreate(BaseModel):
     url: HttpUrl
     email: EmailStr
@@ -370,302 +257,184 @@ class TaskCreate(BaseModel):
     budget: Optional[int] = Field(None, ge=0)
     needsAccommodation: bool = False
 
+
+# --- API Routes ---
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
+
+@app.get("/api/notifications")
+def get_notifications():
+    return notifications_cache[-20:]
+
 @app.get("/api/tasks/{task_id}/ticket-records")
 def get_ticket_records(task_id: int, db: Session = Depends(get_db)):
-    """Get ticket availability history for a specific task"""
     records = db.query(database.TicketRecord).filter(
         database.TicketRecord.task_id == task_id
     ).order_by(database.TicketRecord.detected_at.desc()).limit(50).all()
-    
     return [{
-        "id": r.id,
-        "task_id": r.task_id,
-        "zone": r.zone,
-        "price": r.price,
-        "remaining": r.remaining,
+        "id": r.id, "task_id": r.task_id,
+        "zone": r.zone, "price": r.price, "remaining": r.remaining,
         "raw_text": r.raw_text,
         "detected_at": r.detected_at.isoformat() if r.detected_at else None
     } for r in records]
 
 @app.get("/api/reverse-geocode")
 def reverse_geocode(lat: float, lng: float):
+    import requests
     api_key = os.environ.get("GOOGLE_MAPS_API_KEY")
     if not api_key:
         raise HTTPException(status_code=500, detail="Google Maps API Key not configured")
-        
     url = f"https://maps.googleapis.com/maps/api/geocode/json?latlng={lat},{lng}&key={api_key}&language=zh-TW"
     try:
         res = requests.get(url, timeout=5)
         data = res.json()
         if data.get("status") == "OK" and data.get("results"):
             return {"address": data["results"][0]["formatted_address"]}
-        else:
-            raise HTTPException(status_code=400, detail="無法解析該座標的地址")
+        raise HTTPException(status_code=400, detail="無法解析該座標的地址")
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/health")
-def health_check():
-    return {"status": "ok"}
-
-@app.get("/debug/stats")
-def get_debug_stats():
-    process = psutil.Process(os.getpid())
-    mem = process.memory_info()
-    return {
-        "cpu_percent": process.cpu_percent(interval=0.1),
-        "memory_info": {
-            "rss": mem.rss,
-            "vms": mem.vms
-        },
-        "playwright_pages_count": BrowserManager.get_page_count()
-    }
-
-@app.get("/api/notifications")
-def get_notifications():
-    # Return last 20 notifications
-    return notifications_cache[-20:]
-
 @app.get("/api/concerts")
 async def get_concerts():
-    # KKTIX currently blocks automated requests with 403 Forbidden.
-    # Return realistic upcoming concerts in Taiwan to populate the UI.
     return [
-        {
-            "title": "ITZY 2ND WORLD TOUR <BORN TO BE> in TAIPEI",
-            "venue": "台北小巨蛋",
-            "date": "2026/07/20",
-            "url": "https://tixcraft.com/activity/detail/24_itzy",
-            "imageUrl": "https://images.unsplash.com/photo-1540039155732-d6824b2f155c?w=600&q=80"
-        },
-        {
-            "title": "韋禮安「如果可以，我想和你明天再見」演唱會",
-            "venue": "台北小巨蛋",
-            "date": "2026/05/30",
-            "url": "https://ticket.ibon.com.tw/",
-            "imageUrl": "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=600&q=80"
-        },
-        {
-            "title": "NMIXX THE 1ST FAN CONCERT",
-            "venue": "高雄巨蛋",
-            "date": "2026/07/11",
-            "url": "https://tixcraft.com",
-            "imageUrl": "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=600&q=80"
-        },
-        {
-            "title": "CNBLUE LIVE 'CNBLUENTITY' IN KAOHSIUNG",
-            "venue": "高雄流行音樂中心",
-            "date": "2026/06/13",
-            "url": "https://ticket.com.tw",
-            "imageUrl": "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=600&q=80"
-        }
+        {"title": "ITZY 2ND WORLD TOUR <BORN TO BE> in TAIPEI", "venue": "台北小巨蛋",
+         "date": "2026/07/20", "url": "https://tixcraft.com/activity/detail/24_itzy",
+         "imageUrl": "https://images.unsplash.com/photo-1540039155732-d6824b2f155c?w=600&q=80"},
+        {"title": "韋禮安「如果可以，我想和你明天再見」演唱會", "venue": "台北小巨蛋",
+         "date": "2026/05/30", "url": "https://ticket.ibon.com.tw/",
+         "imageUrl": "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=600&q=80"},
+        {"title": "NMIXX THE 1ST FAN CONCERT", "venue": "高雄巨蛋",
+         "date": "2026/07/11", "url": "https://tixcraft.com",
+         "imageUrl": "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=600&q=80"},
+        {"title": "CNBLUE LIVE 'CNBLUENTITY' IN KAOHSIUNG", "venue": "高雄流行音樂中心",
+         "date": "2026/06/13", "url": "https://ticket.com.tw",
+         "imageUrl": "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=600&q=80"},
     ]
 
 @app.post("/tasks")
 async def create_task(task_data: TaskCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
-    # 檢查是否超過並行任務上限
-    active_tasks_count = db.query(database.Task).filter(database.Task.status == "監控中").count()
-    if active_tasks_count >= MAX_CONCURRENT_TASKS:
+    active_count = db.query(database.Task).filter(database.Task.status == "監控中").count()
+    if active_count >= MAX_CONCURRENT_TASKS:
         raise HTTPException(status_code=400, detail="伺服器負載已滿")
 
-    # Save to database
     db_task = database.Task(
-        url=str(task_data.url),
-        email=task_data.email,
-        departure=task_data.departure,
-        budget=task_data.budget,
-        needs_accommodation=task_data.needsAccommodation,
-        status="監控中"
+        url=str(task_data.url), email=task_data.email,
+        departure=task_data.departure, budget=task_data.budget,
+        needs_accommodation=task_data.needsAccommodation, status="監控中"
     )
     db.add(db_task)
     db.commit()
     db.refresh(db_task)
 
-    # Send confirmation email in background
     background_tasks.add_task(email_service.send_task_created_email, db_task.email, str(db_task.url))
 
-    # 將任務加入背景排程 (首次執行設在 5 ~ 60 秒內隨機，之後由 check_ticket_status 遞迴排程)
-    first_run_delay = random.randint(5, 60)
+    first_delay = random.randint(5, 30)
     scheduler.add_job(
-        check_ticket_status,
-        'date',
-        run_date=datetime.now() + timedelta(seconds=first_run_delay),
+        check_ticket_status, 'date',
+        run_date=datetime.now() + timedelta(seconds=first_delay),
         args=[db_task.id, db_task.url, db_task.email],
-        id=f"task_{db_task.id}",
-        replace_existing=True
+        id=f"task_{db_task.id}", replace_existing=True
     )
-    print(f"[Task {db_task.id}] 任務建立成功，首次檢查預計於 {first_run_delay} 秒後啟動。")
+    print(f"[Task {db_task.id}] 任務建立，首次檢查於 {first_delay}s 後。")
 
-    async def scrape_venue_from_tixcraft(url: str) -> str:
-        default_venue = "台北流行音樂中心" # Fallback venue
-        try:
-            browser = await BrowserManager.get_browser()
-            context = await browser.new_context(user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
-            try:
-                await context.route("**/*", block_resources)
-                page = await context.new_page()
-                
-                # 等待 networkidle 確保 JS 已經渲染完成
-                await page.goto(url, wait_until="networkidle", timeout=15000)
-                
-                # 擷取頁面內容
-                title = await page.title()
-                content = await page.content()
-                
-                # 尋找場地資訊
-                if "高雄巨蛋" in title or "高雄巨蛋" in content or "K-Arena" in title:
-                    return "高雄巨蛋"
-                if "台北小巨蛋" in title or "台北小巨蛋" in content or "Taipei Arena" in title:
-                    return "台北小巨蛋"
-                if "世運主場館" in title or "世運主場館" in content or "National Stadium" in title:
-                    return "高雄世運主場館"
-                if "台北流行音樂中心" in title or "台北流行音樂中心" in content or "Taipei Music Center" in title:
-                    return "台北流行音樂中心"
-                    
-                return default_venue
-            finally:
-                # 確保資源釋放避免 Memory Leak
-                await context.close()
-        except Exception as e:
-            print(f"Playwright scrape error: {e}")
-            return default_venue
-
+    # --- Venue detection (lightweight HTTP) ---
     if task_data.venue and task_data.venue.strip():
         parsed_venue = task_data.venue.strip()
-        print(f"使用者手動填寫場館名稱: {parsed_venue}")
     else:
-        parsed_venue = await scrape_venue_from_tixcraft(task_data.url)
-        print(f"爬蟲抓到的場館名稱: {parsed_venue}")
+        parsed_venue = await detect_venue_from_url(str(task_data.url))
 
-    def get_real_accommodations(venue_name: str) -> list:
+    # --- Google Maps: accommodations ---
+    def get_accommodations(venue_name: str) -> list:
+        import requests
         api_key = os.environ.get("GOOGLE_MAPS_API_KEY")
         if not api_key:
             return []
         try:
-            # 1. Geocoding
-            geocode_url = f"https://maps.googleapis.com/maps/api/geocode/json?address={venue_name}&key={api_key}"
-            geo_res = requests.get(geocode_url, timeout=5)
-            geo_data = geo_res.json()
-            
-            if geo_data.get("status") != "OK" or not geo_data.get("results"):
+            geo_url = f"https://maps.googleapis.com/maps/api/geocode/json?address={venue_name}&key={api_key}"
+            geo = requests.get(geo_url, timeout=5).json()
+            if geo.get("status") != "OK" or not geo.get("results"):
                 return []
-                
-            location = geo_data["results"][0]["geometry"]["location"]
-            lat, lng = location["lat"], location["lng"]
-            print(f"轉換後的經緯度: {lat}, {lng}")
-            
-            # 2. Places API (Nearby Lodging)
+            loc = geo["results"][0]["geometry"]["location"]
+            lat, lng = loc["lat"], loc["lng"]
+
             places_url = f"https://maps.googleapis.com/maps/api/place/nearbysearch/json?location={lat},{lng}&radius=1000&type=lodging&key={api_key}"
-            places_res = requests.get(places_url, timeout=5)
-            places_data = places_res.json()
-            
-            if places_data.get("status") != "OK":
+            places = requests.get(places_url, timeout=5).json()
+            if places.get("status") != "OK":
                 return []
-                
-            def haversine(lat1, lon1, lat2, lon2):
-                R = 6371000  # Earth radius in meters
-                phi1, phi2 = math.radians(lat1), math.radians(lat2)
-                delta_phi = math.radians(lat2 - lat1)
-                delta_lambda = math.radians(lon2 - lon1)
-                a = math.sin(delta_phi / 2.0) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(delta_lambda / 2.0) ** 2
-                return R * (2 * math.atan2(math.sqrt(a), math.sqrt(1 - a)))
+
+            def haversine(la1, lo1, la2, lo2):
+                R = 6371000
+                p1, p2 = math.radians(la1), math.radians(la2)
+                dp, dl = math.radians(la2 - la1), math.radians(lo2 - lo1)
+                a = math.sin(dp/2)**2 + math.cos(p1)*math.cos(p2)*math.sin(dl/2)**2
+                return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
             hotels = []
-            for place in places_data.get("results", [])[:3]:
-                hotel_lat = place.get("geometry", {}).get("location", {}).get("lat", lat)
-                hotel_lng = place.get("geometry", {}).get("location", {}).get("lng", lng)
-                dist_m = haversine(lat, lng, hotel_lat, hotel_lng)
-                
-                if dist_m < 1000:
-                    dist_str = f"約 {int(dist_m)} 公尺"
-                else:
-                    dist_str = f"約 {dist_m/1000:.1f} 公里"
-
+            for p in places.get("results", [])[:3]:
+                hl = p.get("geometry", {}).get("location", {})
+                d = haversine(lat, lng, hl.get("lat", lat), hl.get("lng", lng))
                 hotels.append({
-                    "id": place.get("place_id"),
-                    "name": place.get("name", "Unknown Hotel"),
-                    "rating": place.get("rating", "N/A"),
-                    "reviews": place.get("user_ratings_total", 0),
-                    "distance": dist_str,
+                    "id": p.get("place_id"), "name": p.get("name", "Unknown"),
+                    "rating": p.get("rating", "N/A"), "reviews": p.get("user_ratings_total", 0),
+                    "distance": f"約 {int(d)} 公尺" if d < 1000 else f"約 {d/1000:.1f} 公里",
                     "price": "依官網為準"
                 })
             return hotels
         except Exception as e:
-            print(f"Error fetching Google Maps API: {e}")
+            print(f"Maps API error: {e}")
             return []
 
-    def get_real_transits(venue_name: str, departure: str) -> list:
+    # --- Google Maps: transit ---
+    def get_transits(venue_name: str, departure: str) -> list:
+        import requests
         if not departure:
             return []
         api_key = os.environ.get("GOOGLE_MAPS_API_KEY")
         if not api_key:
             return []
-            
         try:
-            url = f"https://maps.googleapis.com/maps/api/directions/json?origin={departure}&destination={venue_name}&mode=transit&language=zh-TW&key={api_key}"
-            res = requests.get(url, timeout=5)
-            data = res.json()
-            
+            dir_url = f"https://maps.googleapis.com/maps/api/directions/json?origin={departure}&destination={venue_name}&mode=transit&language=zh-TW&key={api_key}"
+            data = requests.get(dir_url, timeout=5).json()
             if data.get("status") != "OK":
                 return []
-                
             leg = data["routes"][0]["legs"][0]
             duration = leg.get("duration", {}).get("text", "未知")
-            
             fare_obj = data["routes"][0].get("fare")
-            if fare_obj and "value" in fare_obj:
-                fare = f"NT$ {fare_obj['value']}"
-            else:
-                fare = "請洽官網"
-            
-            full_steps = []
-            for step in leg.get("steps", []):
-                mode = step.get("travel_mode", "UNKNOWN")
-                instruction = re.sub(r'<[^>]+>', '', step.get("html_instructions", ""))
-                step_duration = step.get("duration", {}).get("text", "")
-                
-                step_info = {
-                    "mode": mode,
-                    "instruction": instruction,
-                    "duration": step_duration
+            fare = f"NT$ {fare_obj['value']}" if fare_obj and "value" in fare_obj else "請洽官網"
+
+            steps = []
+            for s in leg.get("steps", []):
+                info = {
+                    "mode": s.get("travel_mode", "UNKNOWN"),
+                    "instruction": re.sub(r'<[^>]+>', '', s.get("html_instructions", "")),
+                    "duration": s.get("duration", {}).get("text", "")
                 }
-                if mode == "TRANSIT":
-                    transit_details = step.get("transit_details", {})
-                    line_name = transit_details.get("line", {}).get("short_name") or transit_details.get("line", {}).get("name", "")
-                    vehicle = transit_details.get("line", {}).get("vehicle", {}).get("name", "")
-                    step_info["line"] = f"{vehicle} {line_name}".strip()
-                    step_info["num_stops"] = transit_details.get("num_stops", 0)
-                
-                full_steps.append(step_info)
-                
-            return [{
-                "id": 1,
-                "title": "大眾運輸路線規劃",
-                "description": "查看下方完整轉乘步驟",
-                "duration": duration,
-                "cost": fare,
-                "full_steps": full_steps
-            }]
+                if info["mode"] == "TRANSIT":
+                    td = s.get("transit_details", {})
+                    ln = td.get("line", {})
+                    info["line"] = f"{ln.get('vehicle', {}).get('name', '')} {ln.get('short_name') or ln.get('name', '')}".strip()
+                    info["num_stops"] = td.get("num_stops", 0)
+                steps.append(info)
+
+            return [{"id": 1, "title": "大眾運輸路線規劃", "description": "查看下方完整轉乘步驟",
+                      "duration": duration, "cost": fare, "full_steps": steps}]
         except Exception as e:
-            print(f"Error fetching Google Directions API: {e}")
+            print(f"Directions API error: {e}")
             return []
 
-    # Get real recommendations if needed
-    mock_accommodations = get_real_accommodations(parsed_venue) if task_data.needsAccommodation else []
-    
-    # Get real transit route
-    mock_transits = get_real_transits(parsed_venue, task_data.departure)
+    accommodations = get_accommodations(parsed_venue) if task_data.needsAccommodation else []
+    transits = get_transits(parsed_venue, task_data.departure)
 
     return {
-        "id": db_task.id,
-        "url": db_task.url,
-        "email": db_task.email,
-        "departure": db_task.departure,
-        "budget": db_task.budget,
+        "id": db_task.id, "url": db_task.url, "email": db_task.email,
+        "departure": db_task.departure, "budget": db_task.budget,
         "needsAccommodation": db_task.needs_accommodation,
         "status": db_task.status,
         "createdAt": db_task.created_at.isoformat() + "Z",
         "venue": parsed_venue,
-        "accommodations": mock_accommodations,
-        "transits": mock_transits
+        "accommodations": accommodations, "transits": transits
     }
