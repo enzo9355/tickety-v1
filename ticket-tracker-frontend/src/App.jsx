@@ -159,7 +159,14 @@ function App() {
             }`}
           >
             <span className="material-symbols-outlined text-base">person</span>
-            {isAuthenticated ? (isMobile ? '' : user?.email?.split('@')[0]) : (isMobile ? '登入' : '登入帳號')}
+            {isAuthenticated ? (
+              <span className="hidden lg:inline">{user?.email?.split('@')[0]}</span>
+            ) : (
+              <>
+                <span className="lg:hidden">登入</span>
+                <span className="hidden lg:inline">登入帳號</span>
+              </>
+            )}
           </button>
         </div>
       </header>
@@ -263,7 +270,6 @@ function App() {
       <MobileTabBar 
         activeTab={activePanel} 
         onTabChange={setActivePanel} 
-        isMobile={isMobile} 
       />
 
       <LoginModal isOpen={showLoginModal} onClose={() => setShowLoginModal(false)} />

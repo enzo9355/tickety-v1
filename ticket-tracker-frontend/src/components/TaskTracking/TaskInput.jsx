@@ -10,7 +10,6 @@ const steps = [
 ];
 
 export default function TaskInput({ onTaskAdded, onError, initialUrl }) {
-  const { isMobile } = useMediaQuery();
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     url: '',
@@ -160,20 +159,20 @@ export default function TaskInput({ onTaskAdded, onError, initialUrl }) {
             <div key={step.id} className="flex items-center flex-1">
               <div className={`
                 flex items-center justify-center rounded-full font-bold transition-all duration-300
-                ${isMobile ? 'w-7 h-7 text-xs' : 'w-8 h-8 text-sm'}
+                w-7 h-7 text-xs md:w-8 md:h-8 md:text-sm
                 ${isCompleted ? 'bg-green-500 text-white' : isActive ? 'bg-primary text-white' : 'bg-surface-container-high text-on-surface-variant'}
               `}>
                 {isCompleted ? <span className="material-symbols-outlined text-[16px] text-white">check</span> : step.id}
               </div>
               
-              {idx < steps.length - 1 && !isMobile && (
-                <div className={`
-                  flex-1 h-[2px] mx-3 transition-all duration-300
-                  ${isCompleted ? 'bg-green-500' : 'bg-surface-container-high'}
-                `} />
-              )}
-              {idx < steps.length - 1 && isMobile && (
-                <div className="flex-1 min-w-[8px]" />
+              {idx < steps.length - 1 && (
+                <>
+                  <div className={`
+                    hidden md:block flex-1 h-[2px] mx-3 transition-all duration-300
+                    ${isCompleted ? 'bg-green-500' : 'bg-surface-container-high'}
+                  `} />
+                  <div className="md:hidden flex-1 min-w-[8px]" />
+                </>
               )}
             </div>
           );
@@ -319,7 +318,7 @@ export default function TaskInput({ onTaskAdded, onError, initialUrl }) {
             type="button" 
             onClick={handleSubmit} 
             disabled={submitState !== 'idle' || !validateStep(4)}
-            className={`glass-button ${isMobile ? 'w-full' : 'w-40'}`}
+            className="glass-button w-full md:w-40"
           >
             {getSubmitButtonText()}
           </button>

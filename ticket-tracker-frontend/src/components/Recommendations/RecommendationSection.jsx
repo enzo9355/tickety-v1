@@ -31,7 +31,6 @@ function SkeletonCard() {
 }
 
 export default function RecommendationSection({ selectedTask }) {
-  const { isMobile } = useMediaQuery();
   
   if (!selectedTask) {
     return (

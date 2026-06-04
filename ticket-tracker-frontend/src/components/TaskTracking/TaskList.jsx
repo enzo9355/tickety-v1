@@ -92,7 +92,7 @@ export default function TaskList({ tasks, selectedTask, onTaskSelected }) {
         <span className="text-sm text-on-surface-variant font-normal">({filteredTasks.length}/{tasks.length})</span>
       </h3>
       
-      <div className={`flex gap-2 pl-2 ${isMobile ? 'flex-nowrap overflow-x-auto touch-pan-x' : 'flex-wrap overflow-visible'}`}>
+      <div className="flex gap-2 pl-2 flex-nowrap overflow-x-auto touch-pan-x md:flex-wrap md:overflow-visible">
         {['all', '監控中', '已發現'].map(status => (
           <button
             key={status}

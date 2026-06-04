@@ -1,7 +1,6 @@
 import React from 'react';
 
-export default function MobileTabBar({ activeTab, onTabChange, isMobile }) {
-  if (!isMobile) return null;
+export default function MobileTabBar({ activeTab, onTabChange }) {
 
   const tabs = [
     { id: 'tasks', icon: 'ads_click', label: '我的任務' },
