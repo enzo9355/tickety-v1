@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Clock, CheckCircle2, Activity, ChevronDown, ChevronUp, Terminal } from 'lucide-react';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 
 function TaskLogTerminal({ isActive }) {
   const [logs, setLogs] = useState([]);
@@ -45,6 +46,7 @@ function TaskLogTerminal({ isActive }) {
 }
 
 export default function TaskList({ tasks, selectedTask, onTaskSelected }) {
+  const { isMobile } = useMediaQuery();
   const [expandedTaskId, setExpandedTaskId] = useState(null);
   const [logExpandedTaskId, setLogExpandedTaskId] = useState(null);
   const [statusFilter, setStatusFilter] = useState('all');
@@ -104,7 +106,7 @@ export default function TaskList({ tasks, selectedTask, onTaskSelected }) {
       </h3>
       
       {/* Filter Bar */}
-      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', paddingLeft: '8px' }}>
+      <div style={{ display: 'flex', gap: '8px', flexWrap: isMobile ? 'nowrap' : 'wrap', paddingLeft: '8px', overflowX: isMobile ? 'auto' : 'visible', WebkitOverflowScrolling: 'touch' }}>
         {/* Status Filters */}
         {['all', '監控中', '已發現'].map(status => (
           <button
@@ -153,8 +155,8 @@ export default function TaskList({ tasks, selectedTask, onTaskSelected }) {
       
       <div style={{ 
         display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', 
-        gap: '24px' 
+        gridTemplateColumns: `repeat(auto-fill, minmax(${isMobile ? '240px' : '280px'}, 1fr))`, 
+        gap: isMobile ? '16px' : '24px' 
       }}>
         {filteredTasks.map((task) => {
           const isActive = selectedTask?.id === task.id;
@@ -184,7 +186,7 @@ export default function TaskList({ tasks, selectedTask, onTaskSelected }) {
             >
               {/* Image Header */}
               <div style={{ 
-                height: '140px', 
+                height: isMobile ? '100px' : '140px', 
                 backgroundImage: `url(${imageUrl})`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',

@@ -17,12 +17,23 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
 
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, index=True)
+    session_token = Column(String, unique=True, index=True, nullable=True)
+    magic_token = Column(String, nullable=True)
+    magic_token_expires = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    last_login = Column(DateTime, nullable=True)
+
 class Task(Base):
     __tablename__ = "tasks"
 
     id = Column(Integer, primary_key=True, index=True)
     url = Column(String, index=True)
     email = Column(String, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     departure = Column(String, nullable=True)
     budget = Column(Integer, nullable=True)
     needs_accommodation = Column(Boolean, default=False)

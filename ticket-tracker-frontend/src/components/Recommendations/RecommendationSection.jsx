@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import AccommodationCard from './AccommodationCard';
 import TransitCard from './TransitCard';
 import { Map, BedDouble, Info, Loader2 } from 'lucide-react';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -32,6 +33,7 @@ function SkeletonCard() {
 }
 
 export default function RecommendationSection({ selectedTask }) {
+  const { isMobile } = useMediaQuery();
   
   if (!selectedTask) {
     return (

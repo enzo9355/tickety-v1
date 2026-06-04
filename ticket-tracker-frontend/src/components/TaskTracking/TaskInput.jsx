@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Send, MapPin, DollarSign, Mail, Link as LinkIcon, Check, ChevronRight, ChevronLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import apiClient from '../../api/client';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 
 const steps = [
   { id: 1, title: "票券連結" },
@@ -11,6 +12,7 @@ const steps = [
 ];
 
 export default function TaskInput({ onTaskAdded, onError, initialUrl }) {
+  const { isMobile } = useMediaQuery();
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     url: '',
@@ -148,27 +150,30 @@ export default function TaskInput({ onTaskAdded, onError, initialUrl }) {
   };
 
   return (
-    <div className="glass-panel" style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div className="glass-panel" style={{ padding: isMobile ? '20px' : '32px', display: 'flex', flexDirection: 'column', gap: '24px', minWidth: 0, width: '100%' }}>
       
       {/* Stepper Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
         {steps.map((step, idx) => (
           <div key={step.id} style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
             <div style={{
-              width: '32px', height: '32px', borderRadius: '50%',
+              width: isMobile ? '28px' : '32px', height: isMobile ? '28px' : '32px', borderRadius: '50%',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               background: currentStep > step.id || (currentStep === 4 && submitState === 'success') ? 'var(--color-success)' : currentStep === step.id ? 'var(--color-primary)' : '#E9ECEF',
-              color: currentStep === step.id || currentStep > step.id ? 'white' : 'var(--color-text-muted)', fontWeight: 'bold', fontSize: '0.9rem',
+              color: currentStep === step.id || currentStep > step.id ? 'white' : 'var(--color-text-muted)', fontWeight: 'bold', fontSize: isMobile ? '0.8rem' : '0.9rem',
               transition: 'all 0.3s ease'
             }}>
-              {currentStep > step.id || (currentStep === 4 && submitState === 'success') ? <Check size={16} color="#FFFFFF" /> : step.id}
+              {currentStep > step.id || (currentStep === 4 && submitState === 'success') ? <Check size={isMobile ? 14 : 16} color="#FFFFFF" /> : step.id}
             </div>
-            {idx < steps.length - 1 && (
+            {idx < steps.length - 1 && !isMobile && (
               <div style={{
                 flex: 1, height: '2px', margin: '0 12px',
                 background: currentStep > step.id ? 'var(--color-success)' : '#E9ECEF',
                 transition: 'all 0.3s ease'
               }} />
+            )}
+            {idx < steps.length - 1 && isMobile && (
+              <div style={{ flex: 1, minWidth: '8px' }} />
             )}
           </div>
         ))}
@@ -320,7 +325,7 @@ export default function TaskInput({ onTaskAdded, onError, initialUrl }) {
             onClick={handleSubmit} 
             disabled={submitState !== 'idle' || !validateStep(4)}
             className="glass-button"
-            style={{ width: '160px' }}
+            style={{ width: isMobile ? '100%' : '160px' }}
           >
             {getSubmitButtonText()}
           </button>

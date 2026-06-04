@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import TaskPanel from './components/TaskTracking/TaskPanel';
 import RecommendationSection from './components/Recommendations/RecommendationSection';
@@ -7,8 +7,12 @@ import VenueFacilities from './components/Recommendations/VenueFacilities';
 import TicketHistory from './components/TaskTracking/TicketHistory';
 import ConcertSection from './components/Recommendations/ConcertSection';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { Ticket, AlertCircle, X, Bell, ExternalLink, Search } from 'lucide-react';
+import { Ticket, AlertCircle, X, Bell, ExternalLink, Search, User } from 'lucide-react';
 import apiClient from './api/client';
+import { useMediaQuery } from './hooks/useMediaQuery';
+import MobileTabBar from './components/Layout/MobileTabBar';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import LoginModal from './components/Auth/LoginModal';
 
 function App() {
   const [tasks, setTasks] = useState([]);
@@ -19,6 +23,26 @@ function App() {
   const [notifications, setNotifications] = useState([]);
   const [visibleToasts, setVisibleToasts] = useState([]);
   const [heroSearchUrl, setHeroSearchUrl] = useState('');
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const { user, isAuthenticated, verifyToken, loading: authLoading } = useAuth();
+
+  // Handle magic link verification from URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    if (token) {
+      verifyToken(token).then(result => {
+        if (result.success) {
+          // Clean URL
+          window.history.replaceState({}, '', window.location.pathname);
+        } else {
+          setError(result.error);
+        }
+      });
+    }
+  }, []);
+  const [activePanel, setActivePanel] = useState('tasks');
+  const { isMobile, isTablet } = useMediaQuery();
 
   // Auto clear error after 5 seconds
   useEffect(() => {
@@ -69,14 +93,15 @@ function App() {
   };
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '40px 20px', position: 'relative' }}>
+    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: isMobile ? '16px 12px 80px' : '40px 20px', position: 'relative' }}>
       
       {/* Global Error Toast */}
       {error && (
         <div className="glass-panel animate-fade-in" style={{
-          position: 'fixed', top: '24px', left: '50%', transform: 'translateX(-50%)', zIndex: 1000,
+          position: 'fixed', top: '24px', left: isMobile ? '16px' : '50%', right: isMobile ? '16px' : 'auto', transform: isMobile ? 'none' : 'translateX(-50%)', zIndex: 1000,
           background: 'rgba(255, 68, 68, 0.15)', border: '1px solid rgba(255, 68, 68, 0.4)',
-          padding: '16px 24px', display: 'flex', alignItems: 'center', gap: '12px', minWidth: '320px',
+          padding: '16px 24px', display: 'flex', alignItems: 'center', gap: '12px', minWidth: isMobile ? 'auto' : '320px',
+          width: isMobile ? 'calc(100% - 32px)' : 'auto',
           boxShadow: '0 8px 32px rgba(255, 0, 0, 0.2)'
         }}>
           <AlertCircle color="var(--color-danger)" size={24} />
@@ -88,7 +113,7 @@ function App() {
       )}
 
       {/* Ticket Notifications */}
-      <div style={{ position: 'fixed', bottom: '24px', right: '24px', zIndex: 1000, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <div style={{ position: 'fixed', bottom: isMobile ? '80px' : '24px', right: isMobile ? 'auto' : '24px', left: isMobile ? '16px' : 'auto', zIndex: 1000, display: 'flex', flexDirection: 'column', gap: '12px', ...(isMobile ? { right: '16px' } : {}) }}>
         <AnimatePresence>
           {visibleToasts.map((toast) => (
             <motion.div
@@ -99,7 +124,7 @@ function App() {
               transition={{ type: 'spring', stiffness: 300, damping: 25 }}
               className="glass-panel"
               style={{
-                width: '350px',
+                width: isMobile ? 'calc(100% - 32px)' : '350px',
                 padding: '20px',
                 background: 'rgba(255, 255, 255, 0.95)',
                 border: '1px solid #E9ECEF',
@@ -139,13 +164,34 @@ function App() {
         </AnimatePresence>
       </div>
 
-      <header style={{ marginBottom: '40px', textAlign: 'center', position: 'relative' }}>
+      <header style={{ marginBottom: '40px', textAlign: 'center', position: 'relative', padding: isMobile ? '0' : undefined }}>
+        {/* Login Button — Top Right */}
+        <div style={{ position: 'absolute', top: '0', right: '0', zIndex: 10 }}>
+          <button
+            onClick={() => setShowLoginModal(true)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              padding: isMobile ? '8px 12px' : '8px 16px',
+              background: isAuthenticated ? 'rgba(255, 91, 0, 0.08)' : 'rgba(255,255,255,0.9)',
+              border: isAuthenticated ? '1px solid var(--color-primary)' : '1px solid #E5E7EB',
+              borderRadius: '24px', cursor: 'pointer',
+              color: isAuthenticated ? 'var(--color-primary)' : '#374151',
+              fontSize: '0.85rem', fontWeight: 500,
+              transition: 'all 0.2s',
+              backdropFilter: 'blur(8px)',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+            }}
+          >
+            <User size={16} />
+            {isAuthenticated ? (isMobile ? '' : user?.email?.split('@')[0]) : (isMobile ? '登入' : '登入帳號')}
+          </button>
+        </div>
         <div style={{
           position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
           width: '300px', height: '100px', background: 'none',
           filter: 'blur(20px)', zIndex: 0, pointerEvents: 'none'
         }} />
-        <h1 className="animate-fade-in" style={{ position: 'relative', zIndex: 1, display: 'inline-flex', alignItems: 'center', gap: '12px', fontSize: '2.8rem', fontWeight: 700 }}>
+        <h1 className="animate-fade-in" style={{ position: 'relative', zIndex: 1, display: 'inline-flex', alignItems: 'center', gap: '12px', fontSize: isMobile ? '1.6rem' : '2.8rem', fontWeight: 700 }}>
           <Ticket size={40} color="var(--color-primary)" />
           <span className="text-gradient">Tickety</span>
         </h1>
@@ -159,6 +205,7 @@ function App() {
         }}>
           <div style={{ 
             display: 'flex', 
+            flexDirection: isMobile ? 'column' : 'row',
             background: '#FFFFFF', 
             backdropFilter: 'blur(20px)',
             borderRadius: '16px', 
@@ -196,7 +243,7 @@ function App() {
             </button>
           </div>
           
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: isMobile ? 'nowrap' : 'wrap', overflowX: isMobile ? 'auto' : 'visible', whiteSpace: isMobile ? 'nowrap' : 'normal', WebkitOverflowScrolling: 'touch' }}>
             <span style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', display: 'flex', alignItems: 'center' }}>熱門監控標籤：</span>
             {['#五月天', '#Blackpink', '#周杰倫', '#宇多田光'].map(tag => (
               <button 
@@ -247,9 +294,9 @@ function App() {
       </div>
 
       <ErrorBoundary>
-        <main style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px', alignItems: 'start' }}>
+        <main style={{ display: isMobile ? 'block' : 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '40px', alignItems: 'start' }}>
           {/* Left Column: Task Panel */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: isMobile && activePanel !== 'tasks' ? 'none' : 'flex', flexDirection: 'column', gap: '16px' }}>
             <TaskPanel 
               tasks={tasks}
               selectedTask={selectedTask}
@@ -261,7 +308,7 @@ function App() {
           </div>
 
           {/* Right Column: Recommendations */}
-          <div style={{ position: 'sticky', top: '40px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
+          <div style={{ position: isMobile ? 'static' : 'sticky', top: '40px', display: isMobile && activePanel !== 'recommendations' ? 'none' : 'flex', flexDirection: 'column', gap: '32px', marginTop: isMobile ? '0' : undefined }}>
             {selectedTask && (
               <TicketHistory taskId={selectedTask.id} taskStatus={selectedTask.status} />
             )}
@@ -272,9 +319,26 @@ function App() {
           </div>
         </main>
       </ErrorBoundary>
+
+      <MobileTabBar 
+        activeTab={activePanel} 
+        onTabChange={setActivePanel} 
+        isMobile={isMobile} 
+      />
+
+      <LoginModal isOpen={showLoginModal} onClose={() => setShowLoginModal(false)} />
       
     </div>
   );
 }
 
-export default App;
+// Wrapper that provides AuthContext
+function AppWithAuth() {
+  return (
+    <AuthProvider>
+      <App />
+    </AuthProvider>
+  );
+}
+
+export default AppWithAuth;

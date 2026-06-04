@@ -70,3 +70,46 @@ def send_ticket_alert(to_email: str, ticket_url: str):
     except Exception as e:
         print(f"Failed to send alert email: {e}")
         return False
+
+def send_magic_link(to_email: str, verify_url: str):
+    if not SENDGRID_API_KEY or not SENDER_EMAIL:
+        print("SendGrid credentials are not configured properly.")
+        return False
+
+    message = Mail(
+        from_email=Email(SENDER_EMAIL, "Tickety 售票通知"),
+        to_emails=to_email,
+        subject="【Tickety】您的登入連結",
+        html_content=f"""
+        <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 0; border-radius: 12px; overflow: hidden; border: 1px solid #f0e6d6;">
+            <div style="background: linear-gradient(135deg, #ff9a56, #ff6b35); padding: 32px 40px; text-align: center;">
+                <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700; letter-spacing: 1px;">🎫 Tickety</h1>
+                <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0; font-size: 14px;">售票追蹤與推薦系統</p>
+            </div>
+            <div style="background: #fffaf5; padding: 40px;">
+                <h2 style="color: #e8621a; margin: 0 0 16px; font-size: 22px;">登入驗證</h2>
+                <p style="color: #5a4a3a; font-size: 16px; line-height: 1.6; margin: 0 0 8px;">您好，</p>
+                <p style="color: #5a4a3a; font-size: 16px; line-height: 1.6; margin: 0 0 24px;">點擊以下連結完成登入，連結將於 15 分鐘後失效。</p>
+                <div style="text-align: center; margin: 32px 0;">
+                    <a href="{verify_url}"
+                       style="display: inline-block; background: linear-gradient(135deg, #ff9a56, #ff6b35); color: #ffffff; padding: 16px 48px; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: 18px; box-shadow: 0 4px 15px rgba(255,107,53,0.35); letter-spacing: 0.5px;">
+                       登入 Tickety →
+                    </a>
+                </div>
+                <p style="color: #9a8a7a; font-size: 13px; line-height: 1.5; margin: 24px 0 0;">如果您沒有要求登入，請忽略此信件。</p>
+            </div>
+            <div style="background: #fdf5ec; padding: 20px 40px; text-align: center; border-top: 1px solid #f0e6d6;">
+                <p style="color: #b89a7a; font-size: 12px; margin: 0;">此為系統自動發送之信件，請勿直接回覆。</p>
+            </div>
+        </div>
+        """
+    )
+
+    try:
+        sg = SendGridAPIClient(SENDGRID_API_KEY)
+        response = sg.send(message)
+        print(f"Magic link email sent to {to_email} with status code: {response.status_code}")
+        return True
+    except Exception as e:
+        print(f"Failed to send magic link email: {e}")
+        return False

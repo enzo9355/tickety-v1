@@ -7,4 +7,14 @@ const apiClient = axios.create({
   },
 });
 
+// Auto-attach auth token from localStorage
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem('tickety_session_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 export default apiClient;
+

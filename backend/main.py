@@ -1,8 +1,10 @@
-from fastapi import FastAPI, Depends, BackgroundTasks, HTTPException
+from fastapi import FastAPI, Depends, BackgroundTasks, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, HttpUrl, EmailStr, Field
 from typing import Optional
+import secrets
+import uuid
 import os
 import re
 import math
@@ -258,7 +260,105 @@ class TaskCreate(BaseModel):
     needsAccommodation: bool = False
 
 
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "https://tickety-v1.onrender.com")
+
+
+async def get_current_user_optional(request: Request, db: Session = Depends(get_db)) -> Optional[database.User]:
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return None
+    token = auth_header.split(" ")[1]
+    user = db.query(database.User).filter(database.User.session_token == token).first()
+    return user
+
+
 # --- API Routes ---
+
+
+@app.post("/api/auth/login")
+async def auth_login(request: Request, db: Session = Depends(get_db)):
+    body = await request.json()
+    email = body.get("email")
+    if not email:
+        raise HTTPException(status_code=400, detail="Email is required")
+
+    user = db.query(database.User).filter(database.User.email == email).first()
+    if not user:
+        user = database.User(email=email)
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+    magic_token = str(uuid.uuid4())
+    user.magic_token = magic_token
+    user.magic_token_expires = datetime.now() + timedelta(minutes=15)
+    db.commit()
+
+    verify_url = f"{FRONTEND_URL}/verify?token={magic_token}"
+    email_service.send_magic_link(email, verify_url)
+
+    return {"message": "登入連結已發送至您的信箱"}
+
+
+@app.get("/api/auth/verify")
+async def auth_verify(token: str, db: Session = Depends(get_db)):
+    user = db.query(database.User).filter(database.User.magic_token == token).first()
+    if not user or not user.magic_token_expires or user.magic_token_expires < datetime.now():
+        raise HTTPException(status_code=400, detail="Invalid or expired token")
+
+    session_token = secrets.token_urlsafe(32)
+    user.session_token = session_token
+    user.magic_token = None
+    user.magic_token_expires = None
+    user.last_login = datetime.now()
+    db.commit()
+
+    return {"session_token": session_token, "email": user.email}
+
+
+@app.get("/api/auth/me")
+async def auth_me(request: Request, db: Session = Depends(get_db)):
+    user = await get_current_user_optional(request, db)
+    if not user:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    return {"email": user.email, "id": user.id}
+
+
+@app.get("/api/tasks")
+async def list_tasks(request: Request, email: Optional[str] = None, db: Session = Depends(get_db)):
+    user = await get_current_user_optional(request, db)
+    if user:
+        tasks = db.query(database.Task).filter(database.Task.user_id == user.id).order_by(database.Task.created_at.desc()).all()
+    elif email:
+        tasks = db.query(database.Task).filter(database.Task.email == email).order_by(database.Task.created_at.desc()).all()
+    else:
+        return []
+
+    return [{
+        "id": t.id,
+        "url": t.url,
+        "email": t.email,
+        "status": t.status,
+        "createdAt": t.created_at.isoformat() + "Z" if t.created_at else None,
+        "venue": t.departure or "活動場館",
+    } for t in tasks]
+
+
+@app.delete("/api/tasks/{task_id}")
+async def delete_task(task_id: int, db: Session = Depends(get_db)):
+    db_task = db.query(database.Task).filter(database.Task.id == task_id).first()
+    if not db_task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    # Remove scheduler job if active
+    try:
+        scheduler.remove_job(f"task_{task_id}")
+    except Exception:
+        pass
+
+    db.delete(db_task)
+    db.commit()
+    return {"message": "Task deleted"}
 
 @app.get("/health")
 def health_check():
@@ -316,16 +416,22 @@ async def get_concerts():
     ]
 
 @app.post("/tasks")
-async def create_task(task_data: TaskCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+async def create_task(task_data: TaskCreate, request: Request, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     active_count = db.query(database.Task).filter(database.Task.status == "監控中").count()
     if active_count >= MAX_CONCURRENT_TASKS:
         raise HTTPException(status_code=400, detail="伺服器負載已滿")
 
+    # Try to get current user via auth header
+    user = await get_current_user_optional(request, db)
+    task_email = user.email if user else task_data.email
+
     db_task = database.Task(
-        url=str(task_data.url), email=task_data.email,
+        url=str(task_data.url), email=task_email,
         departure=task_data.departure, budget=task_data.budget,
         needs_accommodation=task_data.needsAccommodation, status="監控中"
     )
+    if user:
+        db_task.user_id = user.id
     db.add(db_task)
     db.commit()
     db.refresh(db_task)

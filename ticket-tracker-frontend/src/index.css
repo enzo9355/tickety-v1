@@ -92,3 +92,13 @@ body::after {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.2);
 }
+
+/* Mobile utilities */
+@media (max-width: 768px) {
+  body {
+    padding-bottom: 70px;
+  }
+  .glass-panel, .glass-card {
+    border-radius: 12px !important;
+  }
+}

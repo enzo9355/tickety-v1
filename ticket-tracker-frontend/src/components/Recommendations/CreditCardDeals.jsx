@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { CreditCard, ChevronDown, ChevronUp, ExternalLink, Percent, Tag } from 'lucide-react';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 
 const CREDIT_CARD_DEALS = [
   {
@@ -82,6 +83,7 @@ const itemVariants = {
 };
 
 export default function CreditCardDeals({ selectedTask }) {
+  const { isMobile } = useMediaQuery();
   const [isExpanded, setIsExpanded] = useState(true);
   const [filterPlatform, setFilterPlatform] = useState('all');
 
@@ -132,7 +134,7 @@ export default function CreditCardDeals({ selectedTask }) {
       {isExpanded && (
         <>
           {/* Platform Filter Chips */}
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: isMobile ? 'nowrap' : 'wrap', overflowX: isMobile ? 'auto' : 'visible', WebkitOverflowScrolling: 'touch' }}>
             <button
               onClick={() => setFilterPlatform('all')}
               style={{
@@ -179,10 +181,11 @@ export default function CreditCardDeals({ selectedTask }) {
                 whileHover={{ y: -2, boxShadow: '0 6px 24px rgba(0,0,0,0.1)' }}
                 className="glass-panel"
                 style={{
-                  padding: '16px 20px',
+                  padding: isMobile ? '14px 16px' : '16px 20px',
                   display: 'flex',
-                  alignItems: 'center',
-                  gap: '16px',
+                  flexDirection: isMobile ? 'column' : 'row',
+                  alignItems: isMobile ? 'flex-start' : 'center',
+                  gap: isMobile ? '12px' : '16px',
                   cursor: 'pointer',
                   position: 'relative',
                   overflow: 'hidden'
@@ -197,12 +200,12 @@ export default function CreditCardDeals({ selectedTask }) {
 
                 {/* Icon */}
                 <div style={{
-                  width: '48px', height: '48px', borderRadius: '12px',
+                  width: isMobile ? '36px' : '48px', height: isMobile ? '36px' : '48px', borderRadius: isMobile ? '8px' : '12px',
                   background: `${deal.color}15`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   flexShrink: 0
                 }}>
-                  <CreditCard size={24} color={deal.color} />
+                  <CreditCard size={isMobile ? 18 : 24} color={deal.color} />
                 </div>
 
                 {/* Content */}
