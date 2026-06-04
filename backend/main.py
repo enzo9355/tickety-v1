@@ -294,7 +294,7 @@ async def auth_login(request: Request, db: Session = Depends(get_db)):
     user.magic_token_expires = datetime.now() + timedelta(minutes=15)
     db.commit()
 
-    verify_url = f"{FRONTEND_URL}/verify?token={magic_token}"
+    verify_url = f"{FRONTEND_URL}/?token={magic_token}"
     email_service.send_magic_link(email, verify_url)
 
     return {"message": "登入連結已發送至您的信箱"}
@@ -400,7 +400,7 @@ def reverse_geocode(lat: float, lng: float):
 
 @app.get("/api/concerts")
 async def get_concerts():
-    return [
+    concerts = [
         {"title": "ITZY 2ND WORLD TOUR <BORN TO BE> in TAIPEI", "venue": "台北小巨蛋",
          "date": "2026/07/20", "url": "https://tixcraft.com/activity/detail/24_itzy",
          "imageUrl": "https://images.unsplash.com/photo-1540039155732-d6824b2f155c?w=600&q=80"},
@@ -414,6 +414,8 @@ async def get_concerts():
          "date": "2026/06/13", "url": "https://ticket.com.tw",
          "imageUrl": "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=600&q=80"},
     ]
+    today = datetime.now().strftime("%Y/%m/%d")
+    return [c for c in concerts if c["date"] >= today]
 
 @app.post("/tasks")
 async def create_task(task_data: TaskCreate, request: Request, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
