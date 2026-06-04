@@ -111,7 +111,7 @@ export default function VenueFacilities({ selectedTask }) {
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <h3 className="flex items-center gap-2 text-xl m-0">
-          <span className="material-symbols-rounded text-2xl text-[var(--color-secondary)]">location_on</span>
+          <span className="material-symbols-outlined text-2xl text-[var(--color-secondary)]">location_on</span>
           場館周邊設施
         </h3>
         <div className="flex items-center gap-2">
@@ -119,9 +119,9 @@ export default function VenueFacilities({ selectedTask }) {
             {venue}
           </span>
           {isExpanded ? (
-            <span className="material-symbols-rounded text-xl text-[var(--color-text-muted)]">expand_less</span>
+            <span className="material-symbols-outlined text-xl text-[var(--color-text-muted)]">expand_less</span>
           ) : (
-            <span className="material-symbols-rounded text-xl text-[var(--color-text-muted)]">expand_more</span>
+            <span className="material-symbols-outlined text-xl text-[var(--color-text-muted)]">expand_more</span>
           )}
         </div>
       </div>
@@ -182,7 +182,7 @@ export default function VenueFacilities({ selectedTask }) {
                   className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0"
                   style={{ background: `${activeCfg.color}12` }}
                 >
-                  <span className="material-symbols-rounded text-[20px]" style={{ color: activeCfg.color }}>{activeCfg.icon}</span>
+                  <span className="material-symbols-outlined text-[20px]" style={{ color: activeCfg.color }}>{activeCfg.icon}</span>
                 </div>
 
                 {/* Info */}
@@ -197,7 +197,7 @@ export default function VenueFacilities({ selectedTask }) {
 
                 {/* Distance */}
                 <div className="flex items-center gap-1 shrink-0">
-                  <span className="material-symbols-rounded text-[12px]" style={{ color: activeCfg.color }}>near_me</span>
+                  <span className="material-symbols-outlined text-[12px]" style={{ color: activeCfg.color }}>near_me</span>
                   <span className="text-[0.78rem] font-semibold whitespace-nowrap" style={{ color: activeCfg.color }}>
                     {item.distance}
                   </span>
@@ -218,9 +218,9 @@ export default function VenueFacilities({ selectedTask }) {
             rel="noopener noreferrer"
             className="flex items-center justify-center gap-2 p-2.5 rounded-[10px] bg-white border border-[#E9ECEF] text-[var(--color-text-muted)] text-[0.85rem] no-underline transition-all duration-200 cursor-pointer hover:bg-[#F8F9FA] hover:border-[var(--color-secondary)]"
           >
-            <span className="material-symbols-rounded text-[16px]">location_on</span>
+            <span className="material-symbols-outlined text-[16px]">location_on</span>
             在 Google Maps 上查看更多設施
-            <span className="material-symbols-rounded text-[14px]">open_in_new</span>
+            <span className="material-symbols-outlined text-[14px]">open_in_new</span>
           </motion.a>
         </>
       )}

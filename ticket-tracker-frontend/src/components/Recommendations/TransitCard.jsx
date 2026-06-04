@@ -3,9 +3,9 @@ import { motion } from 'framer-motion';
 
 export default function TransitCard({ route }) {
   const renderStepIcon = (mode) => {
-    if (mode === 'WALKING') return <span className="material-symbols-rounded text-[16px] text-[var(--color-text-muted)]">directions_walk</span>;
-    if (mode === 'TRANSIT') return <span className="material-symbols-rounded text-[16px] text-[var(--color-primary)]">directions_bus</span>;
-    return <span className="material-symbols-rounded text-[16px] text-[var(--color-text-muted)]">near_me</span>;
+    if (mode === 'WALKING') return <span className="material-symbols-outlined text-[16px] text-[var(--color-text-muted)]">directions_walk</span>;
+    if (mode === 'TRANSIT') return <span className="material-symbols-outlined text-[16px] text-[var(--color-primary)]">directions_bus</span>;
+    return <span className="material-symbols-outlined text-[16px] text-[var(--color-text-muted)]">near_me</span>;
   };
 
   return (
@@ -15,7 +15,7 @@ export default function TransitCard({ route }) {
     >
       <div className="flex items-center gap-4">
         <div className="w-[50px] h-[50px] rounded-xl bg-[rgba(232,86,10,0.2)] flex items-center justify-center shrink-0">
-          <span className="material-symbols-rounded text-[24px] text-[var(--color-primary)]">train</span>
+          <span className="material-symbols-outlined text-[24px] text-[var(--color-primary)]">train</span>
         </div>
         
         <div className="flex-1 min-w-0">
@@ -52,7 +52,7 @@ export default function TransitCard({ route }) {
                 </div>
                 {step.line && (
                   <div className="mt-1 text-[0.85rem] text-[var(--color-primary)] flex items-center gap-1">
-                    <span className="material-symbols-rounded text-[12px]">info</span>
+                    <span className="material-symbols-outlined text-[12px]">info</span>
                     搭乘 {step.line} ({step.num_stops} 站)
                   </div>
                 )}

@@ -36,14 +36,14 @@ export default function RecommendationSection({ selectedTask }) {
     return (
       <div className="flex flex-col gap-md">
         <div className="glass-panel p-8 text-center text-[var(--color-text-muted)] flex flex-col items-center gap-3">
-          <span className="material-symbols-rounded text-3xl text-[#5A626A]">info</span>
+          <span className="material-symbols-outlined text-3xl text-[#5A626A]">info</span>
           <p>請在左側選擇或建立任務以查看智慧推薦</p>
         </div>
         
         {/* Skeleton Previews */}
         <div className="opacity-50 pointer-events-none grayscale">
           <h3 className="flex items-center gap-2 text-xl mb-4 text-[var(--color-text-muted)]">
-            <span className="material-symbols-rounded text-2xl">bed</span>
+            <span className="material-symbols-outlined text-2xl">bed</span>
             推薦住宿預覽
           </h3>
           <div className="flex flex-col gap-4">
@@ -69,7 +69,7 @@ export default function RecommendationSection({ selectedTask }) {
   if (!venue) {
     return (
       <div className="glass-panel p-[60px] text-center text-[var(--color-text-muted)] flex flex-col items-center gap-4">
-        <span className="material-symbols-rounded text-5xl text-[var(--color-primary)] animate-spin">progress_activity</span>
+        <span className="material-symbols-outlined text-5xl text-[var(--color-primary)] animate-spin">progress_activity</span>
         <p>正在透過 AI 解析售票網站與場地資訊中...<br/>請稍候</p>
       </div>
     );
@@ -86,7 +86,7 @@ export default function RecommendationSection({ selectedTask }) {
         <motion.div variants={itemVariants}>
           <div className="flex items-center gap-2 mb-4">
             <h3 className="flex items-center gap-2 text-xl m-0">
-              <span className="material-symbols-rounded text-2xl text-[var(--color-primary)]">bed</span>
+              <span className="material-symbols-outlined text-2xl text-[var(--color-primary)]">bed</span>
               推薦住宿 ({venue})
             </h3>
             <span className="badge bg-[#FF5B00] text-white px-2 py-0.5 rounded text-[0.7rem] font-bold">由 Agoda 推薦</span>
@@ -111,7 +111,7 @@ export default function RecommendationSection({ selectedTask }) {
       <motion.div variants={itemVariants}>
         <div className="flex items-center gap-2 mb-4">
           <h3 className="flex items-center gap-2 text-xl m-0">
-            <span className="material-symbols-rounded text-2xl text-[var(--color-primary)]">map</span>
+            <span className="material-symbols-outlined text-2xl text-[var(--color-primary)]">map</span>
             交通建議
           </h3>
           <span className="badge bg-[#00B3CC] text-white px-2 py-0.5 rounded text-[0.7rem] font-bold">由 Klook 推薦</span>

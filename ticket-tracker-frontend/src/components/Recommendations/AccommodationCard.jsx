@@ -8,7 +8,7 @@ export default function AccommodationCard({ hotel }) {
       whileHover={{ y: -4, scale: 1.01 }}
     >
       <div className="w-[80px] h-[80px] rounded-xl flex items-center justify-center bg-[rgba(242,169,59,0.2)] shrink-0">
-        <span className="material-symbols-rounded text-[32px] text-[var(--color-text)]">home</span>
+        <span className="material-symbols-outlined text-[32px] text-[var(--color-text)]">home</span>
       </div>
 
       <div className="flex flex-col justify-between flex-1 min-w-0">
@@ -25,7 +25,7 @@ export default function AccommodationCard({ hotel }) {
             </a>
           </div>
           <div className="flex items-center gap-1 text-[var(--color-warning)] text-[0.85rem]">
-            <span className="material-symbols-rounded text-[14px]">star</span>
+            <span className="material-symbols-outlined text-[14px]">star</span>
             <span>{hotel.rating} ({hotel.reviews} reviews)</span>
           </div>
         </div>

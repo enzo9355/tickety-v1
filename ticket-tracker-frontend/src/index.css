@@ -1,43 +1,233 @@
 @import "tailwindcss";
 
+/* =====================================================
+   TAILWIND V4 THEME TOKENS
+   (Replaces tailwind.config.js which is ignored in v4)
+   ===================================================== */
+@theme {
+  /* --- Colors --- */
+  --color-primary:                  #FF5B00;
+  --color-primary-container:        #FF5B00;
+  --color-primary-fixed:            #ffdbce;
+  --color-primary-fixed-dim:        #ffb59a;
+  --color-inverse-primary:          #ffb59a;
+  --color-on-primary:               #ffffff;
+  --color-on-primary-container:     #ffffff;
+  --color-on-primary-fixed:         #380d00;
+  --color-on-primary-fixed-variant: #802a00;
+
+  --color-secondary:                #FF8C00;
+  --color-secondary-container:      #fd8b00;
+  --color-secondary-fixed:          #ffdcc3;
+  --color-secondary-fixed-dim:      #ffb77d;
+  --color-on-secondary:             #ffffff;
+  --color-on-secondary-container:   #603100;
+  --color-on-secondary-fixed:       #2f1500;
+  --color-on-secondary-fixed-variant: #6e3900;
+
+  --color-tertiary:                 #006c49;
+  --color-tertiary-container:       #00a773;
+  --color-tertiary-fixed:           #6ffbbe;
+  --color-tertiary-fixed-dim:       #4edea3;
+  --color-on-tertiary:              #ffffff;
+  --color-on-tertiary-container:    #003320;
+  --color-on-tertiary-fixed:        #002113;
+  --color-on-tertiary-fixed-variant: #005236;
+
+  --color-error:                    #ba1a1a;
+  --color-error-container:          #ffdad6;
+  --color-on-error:                 #ffffff;
+  --color-on-error-container:       #93000a;
+
+  --color-surface:                  #f7f9ff;
+  --color-surface-dim:              #d7dadf;
+  --color-surface-bright:           #f7f9ff;
+  --color-surface-variant:          #e0e3e8;
+  --color-surface-tint:             #a83900;
+  --color-surface-container:        #ebeef3;
+  --color-surface-container-low:    #f1f4f9;
+  --color-surface-container-high:   #e5e8ee;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-highest:#e0e3e8;
+  --color-on-surface:               #181c20;
+  --color-on-surface-variant:       #5A626A;
+  --color-inverse-surface:          #2d3135;
+  --color-inverse-on-surface:       #eef1f6;
+
+  --color-background:               #F8F9FA;
+  --color-on-background:            #212529;
+
+  --color-outline:                  #907065;
+  --color-outline-variant:          #e4beb1;
+
+  /* --- Spacing --- */
+  --spacing-xs:            4px;
+  --spacing-sm:            8px;
+  --spacing-md:            16px;
+  --spacing-lg:            24px;
+  --spacing-xl:            32px;
+  --spacing-xxl:           48px;
+  --spacing-gutter:        20px;
+  --spacing-container-max: 1280px;
+
+  /* --- Font Families --- */
+  --font-headline-lg:        "Outfit", sans-serif;
+  --font-headline-md:        "Outfit", sans-serif;
+  --font-headline-sm:        "Outfit", sans-serif;
+  --font-headline-lg-mobile: "Outfit", sans-serif;
+  --font-display-lg:         "Outfit", sans-serif;
+  --font-body-lg:            "Inter", sans-serif;
+  --font-body-md:            "Inter", sans-serif;
+  --font-body-sm:            "Inter", sans-serif;
+  --font-label-md:           "Inter", sans-serif;
+  --font-label-sm:           "Inter", sans-serif;
+}
+
+/* =====================================================
+   ROOT: RGB values for rgba() inline usage
+   ===================================================== */
+:root {
+  --color-primary-rgb:   255, 91, 0;
+  --color-secondary-rgb: 255, 140, 0;
+}
+
+/* =====================================================
+   UTILITY CLASSES
+   ===================================================== */
 @layer utilities {
-    .glass-card {
-        background-color: rgba(255, 255, 255, 0.9);
-        backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.5);
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
-    }
-    .glass-modal {
-        background-color: rgba(255, 255, 255, 0.9);
-        backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.5);
-        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
-    }
-    .material-symbols-outlined {
-        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-    }
-    .material-symbols-outlined[style*="FILL: 1"] {
-        font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-    }
-    .animate-pulse-green {
-        animation: pulse-green 2s ease-in-out infinite;
-    }
-    @keyframes pulse-green {
-        0% { opacity: 0.3; }
-        50% { opacity: 1; }
-        100% { opacity: 0.3; }
-    }
-    /* Hide scrollbar for horizontal scroll areas */
-    .no-scrollbar::-webkit-scrollbar {
-        display: none;
-    }
-    .no-scrollbar {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-    }
-    .text-gradient {
-        background: linear-gradient(90deg, #FF5B00, #FF8C00);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
+
+  /* --- Glass surfaces --- */
+  .glass-card {
+    background-color: rgba(255, 255, 255, 0.90);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.50);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+    border-radius: 16px;
+  }
+
+  .glass-modal {
+    background-color: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.60);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+    border-radius: 24px;
+  }
+
+  .glass-panel {
+    background-color: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+    border-radius: 12px;
+    padding: 12px 16px;
+  }
+
+  /* --- Interactive components --- */
+  .glass-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 20px;
+    border-radius: 12px;
+    border: none;
+    background-color: #FF5B00;
+    color: #ffffff;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+    box-shadow: 0 2px 8px rgba(255, 91, 0, 0.30);
+    text-decoration: none;
+  }
+  .glass-button:hover {
+    background-color: #e8560a;
+    box-shadow: 0 4px 16px rgba(255, 91, 0, 0.40);
+    transform: translateY(-1px);
+  }
+  .glass-button:active {
+    transform: translateY(0);
+  }
+  .glass-button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .glass-input {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1.5px solid #e0e3e8;
+    background-color: rgba(255, 255, 255, 0.80);
+    font-size: 0.95rem;
+    color: #181c20;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .glass-input:focus {
+    border-color: #FF5B00;
+    box-shadow: 0 0 0 3px rgba(255, 91, 0, 0.12);
+  }
+
+  .glass-checkbox-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+  }
+  .glass-checkbox {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    border: 2px solid #e0e3e8;
+    background: white;
+    accent-color: #FF5B00;
+    cursor: pointer;
+  }
+
+  /* --- Animations --- */
+  .animate-fade-in {
+    animation: fade-in 0.5s ease both;
+  }
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .animate-delay-1 {
+    animation-delay: 0.1s;
+  }
+
+  .animate-pulse-green {
+    animation: pulse-green 2s ease-in-out infinite;
+  }
+  @keyframes pulse-green {
+    0%   { opacity: 0.3; }
+    50%  { opacity: 1;   }
+    100% { opacity: 0.3; }
+  }
+
+  /* --- Scrollbar hiding --- */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* --- Text gradient (brand) --- */
+  .text-gradient {
+    background: linear-gradient(90deg, #FF5B00, #FF8C00);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* --- Material Symbols font-variation-settings --- */
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
 }

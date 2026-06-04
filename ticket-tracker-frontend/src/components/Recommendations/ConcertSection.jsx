@@ -28,7 +28,7 @@ export default function ConcertSection({ concerts }) {
     return (
       <div className="opacity-50 pointer-events-none grayscale glass-card rounded-xl p-md overflow-hidden mt-10">
         <h3 className="flex items-center gap-2 text-xl mb-4 text-[var(--color-text-muted)]">
-          <span className="material-symbols-rounded text-2xl">music_note</span>
+          <span className="material-symbols-outlined text-2xl">music_note</span>
           近期演唱會推薦
         </h3>
         <div className="flex overflow-x-auto no-scrollbar gap-sm snap-x">
@@ -43,7 +43,7 @@ export default function ConcertSection({ concerts }) {
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="visible" className="glass-card rounded-xl p-md overflow-hidden mt-10">
       <h3 className="flex items-center gap-2 text-xl mb-4 text-[var(--color-text)]">
-        <span className="material-symbols-rounded text-2xl text-[var(--color-secondary)]">music_note</span>
+        <span className="material-symbols-outlined text-2xl text-[var(--color-secondary)]">music_note</span>
         近期演唱會推薦
       </h3>
       <div className="flex overflow-x-auto no-scrollbar gap-sm snap-x">
@@ -68,11 +68,11 @@ export default function ConcertSection({ concerts }) {
             <div className="relative z-10 p-4 flex flex-col gap-2 h-full justify-end">
               <h4 className="m-0 text-base font-semibold text-white line-clamp-2">{concert.title}</h4>
               <div className="flex items-center gap-1.5 text-white/80 text-[0.85rem]">
-                <span className="material-symbols-rounded text-[14px]">location_on</span>
+                <span className="material-symbols-outlined text-[14px]">location_on</span>
                 <span className="whitespace-nowrap overflow-hidden text-ellipsis">{concert.venue}</span>
               </div>
               <div className="flex items-center gap-1.5 text-white/80 text-[0.85rem]">
-                <span className="material-symbols-rounded text-[14px]">calendar_today</span>
+                <span className="material-symbols-outlined text-[14px]">calendar_today</span>
                 <span>{concert.date}</span>
               </div>
             </div>

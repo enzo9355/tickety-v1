@@ -144,7 +144,7 @@ function App() {
         </AnimatePresence>
       </div>
 
-      <header className="bg-surface/90 backdrop-blur-xl docked full-width top-0 z-50 shadow-sm flex justify-between items-center w-full px-gutter py-md max-w-container-max mx-auto border-b border-white/50 sticky">
+      <header className="bg-white/90 backdrop-blur-xl top-0 z-50 shadow-sm flex justify-between items-center w-full px-6 py-3 border-b border-white/50 sticky">
         <h1 className="animate-fade-in m-0 relative z-10 inline-flex items-center gap-3 text-2xl lg:text-4xl font-bold">
           <span className="material-symbols-outlined text-[32px] lg:text-[40px] text-primary">local_activity</span>
           <span className="text-gradient">Tickety</span>
@@ -202,7 +202,7 @@ function App() {
             </button>
           </div>
           
-          <div className="flex justify-center gap-3 flex-nowrap lg:flex-wrap overflow-x-auto lg:overflow-x-visible whitespace-nowrap lg:whitespace-normal pb-2 lg:pb-0 scrollbar-hide">
+          <div className="flex justify-center gap-3 flex-nowrap lg:flex-wrap overflow-x-auto lg:overflow-x-visible whitespace-nowrap lg:whitespace-normal pb-2 lg:pb-0 no-scrollbar">
             <span className="text-text-muted text-sm flex items-center shrink-0">熱門監控標籤：</span>
             {['#五月天', '#Blackpink', '#周杰倫', '#宇多田光'].map(tag => (
               <button 

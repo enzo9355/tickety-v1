@@ -108,7 +108,7 @@ export default function CreditCardDeals({ selectedTask }) {
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <h3 className="flex items-center gap-2 text-xl m-0">
-          <span className="material-symbols-rounded text-2xl text-[var(--color-primary)]">credit_card</span>
+          <span className="material-symbols-outlined text-2xl text-[var(--color-primary)]">credit_card</span>
           刷卡優惠推薦
         </h3>
         <div className="flex items-center gap-2">
@@ -118,9 +118,9 @@ export default function CreditCardDeals({ selectedTask }) {
             </span>
           )}
           {isExpanded ? (
-            <span className="material-symbols-rounded text-xl text-[var(--color-text-muted)]">expand_less</span>
+            <span className="material-symbols-outlined text-xl text-[var(--color-text-muted)]">expand_less</span>
           ) : (
-            <span className="material-symbols-rounded text-xl text-[var(--color-text-muted)]">expand_more</span>
+            <span className="material-symbols-outlined text-xl text-[var(--color-text-muted)]">expand_more</span>
           )}
         </div>
       </div>
@@ -175,7 +175,7 @@ export default function CreditCardDeals({ selectedTask }) {
                     className="flex items-center justify-center shrink-0 w-9 h-9 rounded-lg md:w-12 md:h-12 md:rounded-xl"
                     style={{ background: `${deal.color}15` }}
                   >
-                    <span className="material-symbols-rounded text-[18px] md:text-[24px]" style={{ color: deal.color }}>credit_card</span>
+                    <span className="material-symbols-outlined text-[18px] md:text-[24px]" style={{ color: deal.color }}>credit_card</span>
                   </div>
 
                   {/* Content */}
@@ -212,7 +212,7 @@ export default function CreditCardDeals({ selectedTask }) {
                     </span>
                   </div>
 
-                  <span className="material-symbols-rounded shrink-0 opacity-50 text-[16px] text-[var(--color-text-muted)]">open_in_new</span>
+                  <span className="material-symbols-outlined shrink-0 opacity-50 text-[16px] text-[var(--color-text-muted)]">open_in_new</span>
                 </div>
               </motion.div>
             ))}
