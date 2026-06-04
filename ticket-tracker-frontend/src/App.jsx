@@ -171,72 +171,51 @@ function App() {
         </div>
       </header>
 
-      <main className="max-w-container-max mx-auto px-gutter pt-md pb-lg flex flex-col gap-sm">
-        
-        {/* Hero Section - compact */}
-        <div className="glass-card animate-fade-in animate-delay-1 w-full flex flex-col gap-3 relative z-10 p-4 lg:p-5 rounded-2xl mb-2 border border-white/40 shadow-sm bg-white/40">
-          <div className="flex flex-col lg:flex-row bg-white/60 backdrop-blur-xl rounded-xl border border-white/60 p-1.5 shadow-[0_4px_16px_rgba(0,0,0,0.04)]">
-            <div className="flex items-center px-3 text-gray-400">
-              <span className="material-symbols-outlined text-xl">search</span>
+      <main className="max-w-container-max mx-auto px-gutter py-lg">
+
+        {/* ── Hero / Search Section ─────────────────────── */}
+        <section className="mb-xl">
+          {/* Search bar card */}
+          <div className="glass-card rounded-xl p-lg flex flex-col md:flex-row items-center gap-md">
+            <div className="relative w-full flex-1">
+              <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+              <input
+                type="url"
+                placeholder="貼上 tixcraft / KKTIX 購票連結..."
+                value={heroSearchUrl}
+                onChange={e => setHeroSearchUrl(e.target.value)}
+                className="w-full bg-surface-container-low/50 border border-outline/50 rounded-lg py-4 pl-12 pr-4 font-body-md text-body-md focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-colors"
+              />
             </div>
-            <input 
-              type="url"
-              placeholder="貼上拓元、KKTIX 等售票連結，立即開啟智能監控..."
-              value={heroSearchUrl}
-              onChange={e => setHeroSearchUrl(e.target.value)}
-              className="flex-1 bg-transparent border-none text-gray-900 text-sm lg:text-base outline-none py-2.5 lg:py-3 w-full"
-            />
-            <button 
-              className="bg-primary-container text-white border-none px-6 py-2.5 text-sm lg:text-base rounded-xl whitespace-nowrap cursor-pointer hover:opacity-90 transition-opacity font-medium mt-1.5 lg:mt-0"
-              onClick={() => {
-                document.getElementById('task-input-section')?.scrollIntoView({ behavior: 'smooth' });
-              }}
+            <button
+              className="w-full md:w-auto bg-gradient-to-r from-primary-container to-secondary-container text-white font-label-md text-label-md px-8 py-4 rounded-full hover:shadow-md transition-all whitespace-nowrap cursor-pointer"
+              onClick={() => document.getElementById('task-input-section')?.scrollIntoView({ behavior: 'smooth' })}
             >
               開始追蹤
             </button>
           </div>
-          
-          <div className="flex gap-2 flex-nowrap lg:flex-wrap overflow-x-auto lg:overflow-x-visible whitespace-nowrap lg:whitespace-normal no-scrollbar">
-            <span className="text-on-surface-variant text-xs flex items-center shrink-0">熱門監控標籤：</span>
-            {['#五月天', '#Blackpink', '#周杰倫', '#宇多田光'].map(tag => (
-              <button 
+
+          {/* Tag chips */}
+          <div className="flex gap-sm mt-md overflow-x-auto pb-2 no-scrollbar">
+            {['ITZY 台北', '五月天', '韋禮安'].map(tag => (
+              <button
                 key={tag}
-                onClick={() => {
-                  setHeroSearchUrl(`https://tixcraft.com/activity/detail/${tag.replace('#', '')}`);
-                  document.getElementById('task-input-section')?.scrollIntoView({ behavior: 'smooth' });
-                }}
-                className="bg-primary-fixed/30 text-primary-container font-label-sm text-label-sm px-4 py-1 rounded-full whitespace-nowrap cursor-pointer hover:bg-primary-fixed/50 transition-colors shrink-0 border border-primary-fixed/20"
+                onClick={() => document.getElementById('task-input-section')?.scrollIntoView({ behavior: 'smooth' })}
+                className="bg-primary-fixed/30 text-primary-container font-label-sm text-label-sm px-4 py-1 rounded-full whitespace-nowrap cursor-pointer hover:bg-primary-fixed/50 transition-colors shrink-0"
               >
                 {tag}
               </button>
             ))}
           </div>
-        </div>
+        </section>
 
-        {/* System Status Bar - compact inline */}
-        <div className="animate-fade-in flex gap-2 mb-2 flex-wrap">
-          <div className="bg-white/75 backdrop-blur-md px-4 py-2 rounded-xl flex items-center gap-1.5 border border-white/50 shadow-sm text-xs">
-            <span className={`inline-block w-2 h-2 rounded-full ${serverStatus === '良好' ? 'bg-tertiary' : 'bg-error'}`}></span>
-            <span className="text-on-surface-variant">伺服器</span>
-            <strong className="text-on-surface">{serverStatus}</strong>
-          </div>
-          <div className="bg-white/75 backdrop-blur-md px-4 py-2 rounded-xl flex items-center gap-1.5 border border-white/50 shadow-sm text-xs">
-            <span className="material-symbols-outlined text-secondary-container text-[16px]">search</span>
-            <span className="text-on-surface-variant">監控中任務</span>
-            <strong className="text-on-surface">{tasks.filter(t => t.status === '監控中').length}</strong>
-          </div>
-          <div className="bg-white/75 backdrop-blur-md px-4 py-2 rounded-xl flex items-center gap-1.5 border border-white/50 shadow-sm text-xs">
-            <span className="material-symbols-outlined text-primary text-[16px]">local_activity</span>
-            <span className="text-on-surface-variant">近期演唱會</span>
-            <strong className="text-on-surface">{concerts.length} 場</strong>
-          </div>
-        </div>
-
-          <ErrorBoundary>
+        {/* ── Two-Column Grid ───────────────────────────── */}
+        <ErrorBoundary>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
-            {/* Left Column: Task Panel */}
-            <div className={`lg:col-span-8 flex-col gap-md ${activePanel === 'tasks' ? 'flex' : 'hidden lg:flex'}`}>
-              <TaskPanel 
+
+            {/* Left Column */}
+            <div className={`lg:col-span-8 flex-col gap-lg ${activePanel === 'tasks' ? 'flex' : 'hidden lg:flex'}`}>
+              <TaskPanel
                 tasks={tasks}
                 selectedTask={selectedTask}
                 onTaskAdded={handleTaskAdded}
@@ -246,20 +225,22 @@ function App() {
               />
             </div>
 
-            {/* Right Column: Recommendations */}
-            <div className={`lg:col-span-4 flex-col gap-md ${activePanel === 'recommendations' ? 'flex' : 'hidden lg:flex'}`}>
+            {/* Right Column */}
+            <div className={`lg:col-span-4 flex-col gap-gutter ${activePanel === 'recommendations' ? 'flex' : 'hidden lg:flex'}`}>
+              <ConcertSection concerts={concerts} />
               {selectedTask && (
                 <TicketHistory taskId={selectedTask.id} taskStatus={selectedTask.status} />
               )}
               <RecommendationSection selectedTask={selectedTask} />
               <VenueFacilities selectedTask={selectedTask} />
               <CreditCardDeals selectedTask={selectedTask} />
-              <ConcertSection concerts={concerts} />
             </div>
+
           </div>
-          </ErrorBoundary>
+        </ErrorBoundary>
 
       </main>
+
 
       <MobileTabBar 
         activeTab={activePanel} 

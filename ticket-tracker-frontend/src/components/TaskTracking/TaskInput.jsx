@@ -3,10 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import apiClient from '../../api/client';
 
 const steps = [
-  { id: 1, title: "票券連結" },
-  { id: 2, title: "場館與定位" },
-  { id: 3, title: "預算與住宿" },
-  { id: 4, title: "啟動監控" }
+  { id: 1, title: "票券連結",    shortLabel: "URL" },
+  { id: 2, title: "場館與定位", shortLabel: "Departure" },
+  { id: 3, title: "預算與住宿", shortLabel: "Budget" },
+  { id: 4, title: "啟動監控",   shortLabel: "Email" }
 ];
 
 export default function TaskInput({ onTaskAdded, onError, initialUrl }) {
@@ -149,31 +149,39 @@ export default function TaskInput({ onTaskAdded, onError, initialUrl }) {
   return (
     <div className="glass-card rounded-xl p-lg flex flex-col gap-6 min-w-0 w-full">
       
-      {/* Stepper Header */}
-      <div className="flex justify-between items-center mb-2">
-        {steps.map((step, idx) => {
+      <h2 className="font-headline-md text-headline-md m-0 text-on-surface">新增監控任務</h2>
+
+      {/* Stepper */}
+      <div className="flex items-start justify-between relative mb-xl">
+        {/* Background connector line */}
+        <div className="absolute left-4 right-4 top-4 h-[2px] bg-surface-container-high z-0" />
+        {/* Active progress line */}
+        <div
+          className="absolute left-4 top-4 h-[2px] bg-primary-container z-0 transition-all duration-500"
+          style={{ width: `${((currentStep - 1) / (steps.length - 1)) * (100 - 8)}%` }}
+        />
+
+        {steps.map((step) => {
           const isCompleted = currentStep > step.id || (currentStep === 4 && submitState === 'success');
           const isActive = currentStep === step.id;
-          
           return (
-            <div key={step.id} className="flex items-center flex-1">
+            <div key={step.id} className="relative z-10 flex flex-col items-center gap-sm">
               <div className={`
-                flex items-center justify-center rounded-full font-bold transition-all duration-300
-                w-7 h-7 text-xs md:w-8 md:h-8 md:text-sm
-                ${isCompleted ? 'bg-green-500 text-white' : isActive ? 'bg-primary text-white' : 'bg-surface-container-high text-on-surface-variant'}
+                w-8 h-8 rounded-full flex items-center justify-center font-bold transition-all duration-300 border-2 border-white
+                ${isCompleted ? 'bg-primary-container text-white shadow-sm' : isActive ? 'bg-primary-container text-white shadow-sm ring-4 ring-primary-fixed/30' : 'bg-surface-container-high text-on-surface-variant'}
               `}>
-                {isCompleted ? <span className="material-symbols-outlined text-[16px] text-white">check</span> : step.id}
+                {isCompleted
+                  ? <span className="material-symbols-outlined text-[16px] text-white">check</span>
+                  : isActive
+                    ? <div className="w-2 h-2 rounded-full bg-white" />
+                    : null
+                }
               </div>
-              
-              {idx < steps.length - 1 && (
-                <>
-                  <div className={`
-                    hidden md:block flex-1 h-[2px] mx-3 transition-all duration-300
-                    ${isCompleted ? 'bg-green-500' : 'bg-surface-container-high'}
-                  `} />
-                  <div className="md:hidden flex-1 min-w-[8px]" />
-                </>
-              )}
+              <span className={`font-label-sm text-label-sm whitespace-nowrap ${
+                isActive ? 'text-primary-container font-semibold' : 'text-on-surface-variant'
+              }`}>
+                {step.shortLabel}
+              </span>
             </div>
           );
         })}
