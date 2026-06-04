@@ -2,8 +2,6 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import AccommodationCard from './AccommodationCard';
 import TransitCard from './TransitCard';
-import { Map, BedDouble, Info, Loader2 } from 'lucide-react';
-import { useMediaQuery } from '../../hooks/useMediaQuery';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -22,11 +20,11 @@ const itemVariants = {
 
 function SkeletonCard() {
   return (
-    <div className="glass-panel" style={{ padding: '20px', display: 'flex', gap: '16px', opacity: 0.7 }}>
-      <div style={{ width: '60px', height: '60px', borderRadius: '12px', background: 'rgba(0,0,0,0.04)' }} className="animate-pulse" />
-      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: '12px', justifyContent: 'center' }}>
-        <div style={{ width: '60%', height: '16px', background: 'rgba(0,0,0,0.04)', borderRadius: '4px' }} className="animate-pulse" />
-        <div style={{ width: '40%', height: '12px', background: 'rgba(0,0,0,0.04)', borderRadius: '4px' }} className="animate-pulse" />
+    <div className="glass-panel flex gap-4 p-5 opacity-70">
+      <div className="w-[60px] h-[60px] rounded-xl bg-black/5 animate-pulse" />
+      <div className="flex flex-col flex-1 gap-3 justify-center">
+        <div className="w-[60%] h-4 bg-black/5 rounded animate-pulse" />
+        <div className="w-[40%] h-3 bg-black/5 rounded animate-pulse" />
       </div>
     </div>
   );
@@ -37,19 +35,19 @@ export default function RecommendationSection({ selectedTask }) {
   
   if (!selectedTask) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-        <div className="glass-panel" style={{ padding: '32px', textAlign: 'center', color: 'var(--color-text-muted)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-          <Info size={32} color="#5A626A" />
+      <div className="flex flex-col gap-md">
+        <div className="glass-panel p-8 text-center text-[var(--color-text-muted)] flex flex-col items-center gap-3">
+          <span className="material-symbols-rounded text-3xl text-[#5A626A]">info</span>
           <p>請在左側選擇或建立任務以查看智慧推薦</p>
         </div>
         
         {/* Skeleton Previews */}
-        <div style={{ opacity: 0.5, pointerEvents: 'none', filter: 'grayscale(1)' }}>
-          <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.25rem', marginBottom: '16px', color: 'var(--color-text-muted)' }}>
-            <BedDouble size={24} />
+        <div className="opacity-50 pointer-events-none grayscale">
+          <h3 className="flex items-center gap-2 text-xl mb-4 text-[var(--color-text-muted)]">
+            <span className="material-symbols-rounded text-2xl">bed</span>
             推薦住宿預覽
           </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div className="flex flex-col gap-4">
             <SkeletonCard />
             <SkeletonCard />
           </div>
@@ -71,15 +69,9 @@ export default function RecommendationSection({ selectedTask }) {
 
   if (!venue) {
     return (
-      <div className="glass-panel" style={{ padding: '60px', textAlign: 'center', color: 'var(--color-text-muted)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
-        <Loader2 size={48} color="var(--color-primary)" className="animate-spin" />
+      <div className="glass-panel p-[60px] text-center text-[var(--color-text-muted)] flex flex-col items-center gap-4">
+        <span className="material-symbols-rounded text-5xl text-[var(--color-primary)] animate-spin">progress_activity</span>
         <p>正在透過 AI 解析售票網站與場地資訊中...<br/>請稍候</p>
-        <style>{`
-          @keyframes spin { 100% { transform: rotate(360deg); } }
-          .animate-spin { animation: spin 2s linear infinite; }
-          .animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-          @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
-        `}</style>
       </div>
     );
   }
@@ -89,29 +81,20 @@ export default function RecommendationSection({ selectedTask }) {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}
+      className="flex flex-col gap-md"
     >
-      <style>{`
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-        .animate-spin { animation: spin 2s linear infinite; }
-        .animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
-      `}</style>
-
       {selectedTask?.needsAccommodation && (
         <motion.div variants={itemVariants}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-            <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.25rem', margin: 0 }}>
-              <BedDouble size={24} color="var(--color-primary)" />
+          <div className="flex items-center gap-2 mb-4">
+            <h3 className="flex items-center gap-2 text-xl m-0">
+              <span className="material-symbols-rounded text-2xl text-[var(--color-primary)]">bed</span>
               推薦住宿 ({venue})
             </h3>
-            <span className="badge" style={{ 
-              background: '#FF5B00', color: '#FFFFFF', padding: '2px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold' 
-            }}>由 Agoda 推薦</span>
+            <span className="badge bg-[#FF5B00] text-white px-2 py-0.5 rounded text-[0.7rem] font-bold">由 Agoda 推薦</span>
           </div>
           
           {accommodations && accommodations.length > 0 ? (
-            <motion.div variants={containerVariants} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <motion.div variants={containerVariants} className="flex flex-col gap-4">
               {accommodations.map((hotel, idx) => (
                 <motion.div key={hotel.id || idx} variants={itemVariants}>
                   <AccommodationCard hotel={hotel} />
@@ -119,7 +102,7 @@ export default function RecommendationSection({ selectedTask }) {
               ))}
             </motion.div>
           ) : (
-            <div className="glass-panel" style={{ padding: '20px', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+            <div className="glass-panel p-5 text-center text-[var(--color-text-muted)]">
               尚未找到鄰近推薦住宿
             </div>
           )}
@@ -127,18 +110,16 @@ export default function RecommendationSection({ selectedTask }) {
       )}
 
       <motion.div variants={itemVariants}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-          <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.25rem', margin: 0 }}>
-            <Map size={24} color="var(--color-primary)" />
+        <div className="flex items-center gap-2 mb-4">
+          <h3 className="flex items-center gap-2 text-xl m-0">
+            <span className="material-symbols-rounded text-2xl text-[var(--color-primary)]">map</span>
             交通建議
           </h3>
-          <span className="badge" style={{ 
-            background: '#00B3CC', color: '#FFFFFF', padding: '2px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold' 
-          }}>由 Klook 推薦</span>
+          <span className="badge bg-[#00B3CC] text-white px-2 py-0.5 rounded text-[0.7rem] font-bold">由 Klook 推薦</span>
         </div>
         
         {transits && transits.length > 0 ? (
-          <motion.div variants={containerVariants} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <motion.div variants={containerVariants} className="flex flex-col gap-4">
             {transits.map((route, idx) => (
               <motion.div key={route.id || idx} variants={itemVariants}>
                 <TransitCard route={route} />
@@ -146,7 +127,7 @@ export default function RecommendationSection({ selectedTask }) {
             ))}
           </motion.div>
         ) : (
-          <div className="glass-panel" style={{ padding: '20px', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+          <div className="glass-panel p-5 text-center text-[var(--color-text-muted)]">
             尚未生成交通建議
           </div>
         )}

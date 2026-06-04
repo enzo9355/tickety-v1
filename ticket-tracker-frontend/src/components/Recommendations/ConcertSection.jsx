@@ -1,6 +1,5 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, MapPin, Music } from 'lucide-react';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -14,11 +13,11 @@ const itemVariants = {
 
 function SkeletonConcertCard() {
   return (
-    <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', opacity: 0.7 }}>
-      <div style={{ width: '100%', height: '140px', background: 'rgba(0,0,0,0.04)' }} className="animate-pulse" />
-      <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        <div style={{ width: '80%', height: '16px', background: 'rgba(0,0,0,0.04)', borderRadius: '4px' }} className="animate-pulse" />
-        <div style={{ width: '50%', height: '12px', background: 'rgba(0,0,0,0.04)', borderRadius: '4px' }} className="animate-pulse" />
+    <div className="min-w-[80%] md:min-w-[45%] snap-center relative rounded-lg overflow-hidden h-40 bg-white/5 opacity-70 flex flex-col">
+      <div className="w-full h-[140px] bg-black/5 animate-pulse" />
+      <div className="p-4 flex flex-col gap-3">
+        <div className="w-4/5 h-4 bg-black/5 rounded animate-pulse" />
+        <div className="w-1/2 h-3 bg-black/5 rounded animate-pulse" />
       </div>
     </div>
   );
@@ -27,12 +26,12 @@ function SkeletonConcertCard() {
 export default function ConcertSection({ concerts }) {
   if (!concerts || concerts.length === 0) {
     return (
-      <div style={{ opacity: 0.5, pointerEvents: 'none', filter: 'grayscale(1)' }}>
-        <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.25rem', marginBottom: '16px', color: 'var(--color-text-muted)' }}>
-          <Music size={24} />
+      <div className="opacity-50 pointer-events-none grayscale glass-card rounded-xl p-md overflow-hidden mt-10">
+        <h3 className="flex items-center gap-2 text-xl mb-4 text-[var(--color-text-muted)]">
+          <span className="material-symbols-rounded text-2xl">music_note</span>
           近期演唱會推薦
         </h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+        <div className="flex overflow-x-auto no-scrollbar gap-sm snap-x">
           <SkeletonConcertCard />
           <SkeletonConcertCard />
           <SkeletonConcertCard />
@@ -42,12 +41,12 @@ export default function ConcertSection({ concerts }) {
   }
 
   return (
-    <motion.div variants={containerVariants} initial="hidden" animate="visible" style={{ marginTop: '40px' }}>
-      <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.25rem', marginBottom: '16px', color: 'var(--color-text)' }}>
-        <Music size={24} color="var(--color-secondary)" />
+    <motion.div variants={containerVariants} initial="hidden" animate="visible" className="glass-card rounded-xl p-md overflow-hidden mt-10">
+      <h3 className="flex items-center gap-2 text-xl mb-4 text-[var(--color-text)]">
+        <span className="material-symbols-rounded text-2xl text-[var(--color-secondary)]">music_note</span>
         近期演唱會推薦
       </h3>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+      <div className="flex overflow-x-auto no-scrollbar gap-sm snap-x">
         {concerts.map((concert, idx) => (
           <motion.a 
             key={idx}
@@ -56,17 +55,25 @@ export default function ConcertSection({ concerts }) {
             rel="noopener noreferrer"
             variants={itemVariants}
             whileHover={{ y: -4, borderColor: 'rgba(232,86,10,0.5)' }}
-            className="glass-panel"
-            style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', textDecoration: 'none', color: 'inherit' }}
+            className="min-w-[80%] md:min-w-[45%] snap-center relative rounded-lg overflow-hidden h-40 flex flex-col no-underline text-inherit glass-panel"
           >
-            <img src={concert.imageUrl} alt={concert.title} style={{ width: '100%', height: '140px', objectFit: 'cover' }} />
-            <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
-              <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, color: 'var(--color-text)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{concert.title}</h4>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--color-text-muted)', fontSize: '0.85rem', marginTop: 'auto' }}>
-                <MapPin size={14} /> <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{concert.venue}</span>
+            {/* Background Image */}
+            <div className="absolute inset-0 z-0">
+              <img src={concert.imageUrl} alt={concert.title} className="w-full h-full object-cover" />
+              {/* Gradient overlay for readability */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-black/20" />
+            </div>
+            
+            {/* Content layered on top */}
+            <div className="relative z-10 p-4 flex flex-col gap-2 h-full justify-end">
+              <h4 className="m-0 text-base font-semibold text-white line-clamp-2">{concert.title}</h4>
+              <div className="flex items-center gap-1.5 text-white/80 text-[0.85rem]">
+                <span className="material-symbols-rounded text-[14px]">location_on</span>
+                <span className="whitespace-nowrap overflow-hidden text-ellipsis">{concert.venue}</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>
-                <Calendar size={14} /> {concert.date}
+              <div className="flex items-center gap-1.5 text-white/80 text-[0.85rem]">
+                <span className="material-symbols-rounded text-[14px]">calendar_today</span>
+                <span>{concert.date}</span>
               </div>
             </div>
           </motion.a>

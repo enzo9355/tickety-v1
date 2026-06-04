@@ -1,43 +1,32 @@
 import React from 'react';
-import { Train, Navigation, Footprints, Bus, Info } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function TransitCard({ route }) {
   const renderStepIcon = (mode) => {
-    if (mode === 'WALKING') return <Footprints size={16} color="var(--color-text-muted)" />;
-    if (mode === 'TRANSIT') return <Bus size={16} color="var(--color-primary)" />;
-    return <Navigation size={16} color="var(--color-text-muted)" />;
+    if (mode === 'WALKING') return <span className="material-symbols-rounded text-[16px] text-[var(--color-text-muted)]">directions_walk</span>;
+    if (mode === 'TRANSIT') return <span className="material-symbols-rounded text-[16px] text-[var(--color-primary)]">directions_bus</span>;
+    return <span className="material-symbols-rounded text-[16px] text-[var(--color-text-muted)]">near_me</span>;
   };
 
   return (
     <motion.div 
-      className="glass-panel" 
+      className="glass-card rounded-xl p-md flex flex-col gap-5" 
       whileHover={{ y: -4, scale: 1.01 }}
-      style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}
     >
-      
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-        <div style={{ 
-          width: '50px', 
-          height: '50px', 
-          borderRadius: '12px', 
-          background: 'rgba(232, 86, 10, 0.2)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
-          <Train size={24} color="var(--color-primary)" />
+      <div className="flex items-center gap-4">
+        <div className="w-[50px] h-[50px] rounded-xl bg-[rgba(232,86,10,0.2)] flex items-center justify-center shrink-0">
+          <span className="material-symbols-rounded text-[24px] text-[var(--color-primary)]">train</span>
         </div>
         
-        <div style={{ flex: 1 }}>
-          <h4 style={{ fontSize: '1.2rem', marginBottom: '4px' }}>
+        <div className="flex-1 min-w-0">
+          <h4 className="text-[1.2rem] mb-1 m-0">
             {route.title}
           </h4>
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <span style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>
+          <div className="flex gap-3 flex-wrap">
+            <span className="text-[var(--color-text-muted)] text-[0.9rem]">
               ⏱ 總時長 {route.duration}
             </span>
-            <span style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>
+            <span className="text-[var(--color-text-muted)] text-[0.9rem]">
               💰 總花費 {route.cost}
             </span>
           </div>
@@ -45,35 +34,26 @@ export default function TransitCard({ route }) {
       </div>
 
       {route.full_steps && route.full_steps.length > 0 ? (
-        <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '0' }}>
+        <div className="mt-2 flex flex-col gap-0">
           {route.full_steps.map((step, idx) => (
-            <div key={idx} style={{ display: 'flex', gap: '16px', position: 'relative', paddingBottom: idx !== route.full_steps.length - 1 ? '24px' : '0' }}>
+            <div key={idx} className={`flex gap-4 relative ${idx !== route.full_steps.length - 1 ? 'pb-6' : 'pb-0'}`}>
               {idx !== route.full_steps.length - 1 && (
-                <div style={{ position: 'absolute', left: '15px', top: '30px', bottom: '0', width: '2px', background: 'rgba(0,0,0,0.1)' }} />
+                <div className="absolute left-[15px] top-[30px] bottom-0 w-[2px] bg-black/10" />
               )}
               
-              <div style={{ 
-                width: '32px', 
-                height: '32px', 
-                borderRadius: '50%', 
-                background: 'rgba(0,0,0,0.05)',
-                border: '2px solid rgba(0,0,0,0.1)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                zIndex: 1
-              }}>
+              <div className="w-[32px] h-[32px] rounded-full bg-black/5 border-2 border-black/10 flex items-center justify-center z-10 shrink-0">
                 {renderStepIcon(step.mode)}
               </div>
               
-              <div style={{ flex: 1, paddingTop: '4px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <span style={{ fontSize: '0.95rem', lineHeight: '1.4' }}>{step.instruction}</span>
-                  <span style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem', whiteSpace: 'nowrap', marginLeft: '12px' }}>{step.duration}</span>
+              <div className="flex-1 pt-1 min-w-0">
+                <div className="flex justify-between items-start gap-3">
+                  <span className="text-[0.95rem] leading-[1.4] break-words">{step.instruction}</span>
+                  <span className="text-[var(--color-text-muted)] text-[0.85rem] whitespace-nowrap shrink-0">{step.duration}</span>
                 </div>
                 {step.line && (
-                  <div style={{ marginTop: '4px', fontSize: '0.85rem', color: 'var(--color-primary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <Info size={12} /> 搭乘 {step.line} ({step.num_stops} 站)
+                  <div className="mt-1 text-[0.85rem] text-[var(--color-primary)] flex items-center gap-1">
+                    <span className="material-symbols-rounded text-[12px]">info</span>
+                    搭乘 {step.line} ({step.num_stops} 站)
                   </div>
                 )}
               </div>
@@ -81,11 +61,10 @@ export default function TransitCard({ route }) {
           ))}
         </div>
       ) : (
-        <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', lineHeight: '1.4' }}>
+        <p className="text-[var(--color-text-muted)] text-[0.9rem] leading-[1.4] m-0">
           {route.description}
         </p>
       )}
-      
     </motion.div>
   );
 }

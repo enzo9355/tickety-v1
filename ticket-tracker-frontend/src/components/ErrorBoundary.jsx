@@ -1,5 +1,4 @@
 import React from 'react';
-import { AlertTriangle } from 'lucide-react';
 
 export class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -19,14 +18,13 @@ export class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="glass-panel" style={{ padding: '40px', textAlign: 'center', color: 'var(--color-danger)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', margin: '20px' }}>
-          <AlertTriangle size={48} />
-          <h2 style={{ color: 'white' }}>畫面渲染發生錯誤</h2>
-          <p style={{ color: 'var(--color-text-muted)' }}>抱歉，系統遇到未預期的錯誤，請嘗試重新整理網頁。</p>
+        <div className="glass-panel p-10 text-center text-error flex flex-col items-center gap-4 m-5">
+          <span className="material-symbols-outlined text-[48px]">warning</span>
+          <h2 className="text-white">畫面渲染發生錯誤</h2>
+          <p className="text-on-surface-variant">抱歉，系統遇到未預期的錯誤，請嘗試重新整理網頁。</p>
           <button 
             onClick={() => window.location.reload()} 
-            className="glass-button" 
-            style={{ marginTop: '16px' }}
+            className="glass-button mt-4" 
           >
             重新整理
           </button>

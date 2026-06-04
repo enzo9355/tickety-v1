@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { CreditCard, ChevronDown, ChevronUp, ExternalLink, Percent, Tag } from 'lucide-react';
-import { useMediaQuery } from '../../hooks/useMediaQuery';
 
 const CREDIT_CARD_DEALS = [
   {
@@ -83,7 +81,6 @@ const itemVariants = {
 };
 
 export default function CreditCardDeals({ selectedTask }) {
-  const { isMobile } = useMediaQuery();
   const [isExpanded, setIsExpanded] = useState(true);
   const [filterPlatform, setFilterPlatform] = useState('all');
 
@@ -103,50 +100,42 @@ export default function CreditCardDeals({ selectedTask }) {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
+      className="glass-card rounded-xl p-md flex flex-col justify-between gap-4"
     >
       {/* Section Header */}
       <div 
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
+        className="flex items-center justify-between cursor-pointer"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.25rem', margin: 0 }}>
-          <CreditCard size={24} color="var(--color-primary)" />
+        <h3 className="flex items-center gap-2 text-xl m-0">
+          <span className="material-symbols-rounded text-2xl text-[var(--color-primary)]">credit_card</span>
           刷卡優惠推薦
         </h3>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="flex items-center gap-2">
           {detectedPlatform && (
-            <span className="badge" style={{
-              background: PLATFORM_MAP[detectedPlatform].color,
-              color: '#FFFFFF',
-              padding: '2px 8px',
-              borderRadius: '4px',
-              fontSize: '0.7rem',
-              fontWeight: 'bold'
-            }}>
+            <span className="badge text-white px-2 py-0.5 rounded text-[0.7rem] font-bold" style={{ background: PLATFORM_MAP[detectedPlatform].color }}>
               {PLATFORM_MAP[detectedPlatform].name} 專屬
             </span>
           )}
-          {isExpanded ? <ChevronUp size={20} color="var(--color-text-muted)" /> : <ChevronDown size={20} color="var(--color-text-muted)" />}
+          {isExpanded ? (
+            <span className="material-symbols-rounded text-xl text-[var(--color-text-muted)]">expand_less</span>
+          ) : (
+            <span className="material-symbols-rounded text-xl text-[var(--color-text-muted)]">expand_more</span>
+          )}
         </div>
       </div>
 
       {isExpanded && (
         <>
           {/* Platform Filter Chips */}
-          <div style={{ display: 'flex', gap: '8px', flexWrap: isMobile ? 'nowrap' : 'wrap', overflowX: isMobile ? 'auto' : 'visible', WebkitOverflowScrolling: 'touch' }}>
+          <div className="flex gap-2 flex-nowrap overflow-x-auto touch-pan-x no-scrollbar md:flex-wrap md:overflow-visible">
             <button
               onClick={() => setFilterPlatform('all')}
+              className="px-3 py-1 rounded-full text-xs font-medium cursor-pointer transition-all duration-200"
               style={{
-                padding: '4px 12px',
-                borderRadius: '20px',
                 border: filterPlatform === 'all' ? '1px solid var(--color-primary)' : '1px solid #E9ECEF',
                 background: filterPlatform === 'all' ? 'rgba(255, 91, 0, 0.08)' : '#FFFFFF',
-                color: filterPlatform === 'all' ? 'var(--color-primary)' : 'var(--color-text-muted)',
-                fontSize: '0.8rem',
-                fontWeight: 500,
-                cursor: 'pointer',
-                transition: 'all 0.2s ease'
+                color: filterPlatform === 'all' ? 'var(--color-primary)' : 'var(--color-text-muted)'
               }}
             >
               全部平台
@@ -155,16 +144,11 @@ export default function CreditCardDeals({ selectedTask }) {
               <button
                 key={key}
                 onClick={() => setFilterPlatform(prev => prev === key ? 'all' : key)}
+                className="px-3 py-1 rounded-full text-xs font-medium cursor-pointer transition-all duration-200"
                 style={{
-                  padding: '4px 12px',
-                  borderRadius: '20px',
                   border: filterPlatform === key ? `1px solid ${val.color}` : '1px solid #E9ECEF',
                   background: filterPlatform === key ? `${val.color}12` : '#FFFFFF',
-                  color: filterPlatform === key ? val.color : 'var(--color-text-muted)',
-                  fontSize: '0.8rem',
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
+                  color: filterPlatform === key ? val.color : 'var(--color-text-muted)'
                 }}
               >
                 {val.name}
@@ -173,103 +157,69 @@ export default function CreditCardDeals({ selectedTask }) {
           </div>
 
           {/* Cards */}
-          <motion.div variants={containerVariants} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <motion.div variants={containerVariants} className="flex flex-col gap-3">
             {filteredDeals.map(deal => (
               <motion.div
                 key={deal.id}
                 variants={itemVariants}
                 whileHover={{ y: -2, boxShadow: '0 6px 24px rgba(0,0,0,0.1)' }}
-                className="glass-panel"
-                style={{
-                  padding: isMobile ? '14px 16px' : '16px 20px',
-                  display: 'flex',
-                  flexDirection: isMobile ? 'column' : 'row',
-                  alignItems: isMobile ? 'flex-start' : 'center',
-                  gap: isMobile ? '12px' : '16px',
-                  cursor: 'pointer',
-                  position: 'relative',
-                  overflow: 'hidden'
-                }}
+                className="glass-panel relative overflow-hidden cursor-pointer"
                 onClick={() => window.open(deal.link, '_blank')}
               >
-                {/* Bank Color Accent */}
-                <div style={{
-                  position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px',
-                  background: deal.color
-                }} />
+                <div className="flex flex-col items-start gap-3 p-3.5 md:flex-row md:items-center md:gap-4 md:p-4">
+                  {/* Bank Color Accent */}
+                  <div className="absolute left-0 top-0 bottom-0 w-1" style={{ background: deal.color }} />
 
-                {/* Icon */}
-                <div style={{
-                  width: isMobile ? '36px' : '48px', height: isMobile ? '36px' : '48px', borderRadius: isMobile ? '8px' : '12px',
-                  background: `${deal.color}15`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  flexShrink: 0
-                }}>
-                  <CreditCard size={isMobile ? 18 : 24} color={deal.color} />
-                </div>
+                  {/* Icon */}
+                  <div 
+                    className="flex items-center justify-center shrink-0 w-9 h-9 rounded-lg md:w-12 md:h-12 md:rounded-xl"
+                    style={{ background: `${deal.color}15` }}
+                  >
+                    <span className="material-symbols-rounded text-[18px] md:text-[24px]" style={{ color: deal.color }}>credit_card</span>
+                  </div>
 
-                {/* Content */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                    <span style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--color-text)' }}>
-                      {deal.bank} {deal.card}
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-semibold text-[0.95rem] text-[var(--color-text)]">
+                        {deal.bank} {deal.card}
+                      </span>
+                      {deal.highlight && (
+                        <span className="badge bg-[var(--color-warning)] text-white px-1.5 py-[1px] rounded-[3px] text-[0.65rem] font-bold">
+                          推薦
+                        </span>
+                      )}
+                    </div>
+                    <p className="m-0 text-[0.82rem] text-[var(--color-text-muted)] leading-snug">
+                      {deal.description}
+                    </p>
+                    <div className="flex flex-wrap gap-1.5 mt-1.5">
+                      {deal.platforms.map(p => (
+                        <span key={p} className="text-[0.7rem] px-1.5 py-[1px] rounded-[3px] font-medium" style={{ background: `${PLATFORM_MAP[p].color}12`, color: PLATFORM_MAP[p].color }}>
+                          {PLATFORM_MAP[p].name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Discount Badge */}
+                  <div className="text-right shrink-0 flex flex-col items-end gap-1">
+                    <span className="font-bold text-[0.95rem] whitespace-nowrap" style={{ color: deal.color }}>
+                      {deal.discount}
                     </span>
-                    {deal.highlight && (
-                      <span className="badge" style={{
-                        background: 'var(--color-warning)',
-                        color: '#FFFFFF',
-                        padding: '1px 6px',
-                        borderRadius: '3px',
-                        fontSize: '0.65rem',
-                        fontWeight: 'bold'
-                      }}>
-                        推薦
-                      </span>
-                    )}
+                    <span className="text-[0.7rem] text-[var(--color-text-muted)]">
+                      至 {deal.validUntil}
+                    </span>
                   </div>
-                  <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--color-text-muted)', lineHeight: 1.4 }}>
-                    {deal.description}
-                  </p>
-                  <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
-                    {deal.platforms.map(p => (
-                      <span key={p} style={{
-                        fontSize: '0.7rem',
-                        padding: '1px 6px',
-                        borderRadius: '3px',
-                        background: `${PLATFORM_MAP[p].color}12`,
-                        color: PLATFORM_MAP[p].color,
-                        fontWeight: 500
-                      }}>
-                        {PLATFORM_MAP[p].name}
-                      </span>
-                    ))}
-                  </div>
-                </div>
 
-                {/* Discount Badge */}
-                <div style={{
-                  textAlign: 'right', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px'
-                }}>
-                  <span style={{
-                    color: deal.color,
-                    fontWeight: 700,
-                    fontSize: '0.95rem',
-                    whiteSpace: 'nowrap'
-                  }}>
-                    {deal.discount}
-                  </span>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>
-                    至 {deal.validUntil}
-                  </span>
+                  <span className="material-symbols-rounded shrink-0 opacity-50 text-[16px] text-[var(--color-text-muted)]">open_in_new</span>
                 </div>
-
-                <ExternalLink size={16} color="var(--color-text-muted)" style={{ flexShrink: 0, opacity: 0.5 }} />
               </motion.div>
             ))}
           </motion.div>
 
           {/* Disclaimer */}
-          <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', textAlign: 'center', margin: 0, opacity: 0.7 }}>
+          <p className="text-[0.75rem] text-[var(--color-text-muted)] text-center m-0 opacity-70">
             ⚠️ 優惠資訊僅供參考，實際回饋以各銀行公告為準
           </p>
         </>

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { Mail, X, ArrowRight, CheckCircle2, LogOut } from 'lucide-react';
 
 export default function LoginModal({ isOpen, onClose }) {
   const { login, loginSent, user, isAuthenticated, logout } = useAuth();
@@ -32,94 +31,50 @@ export default function LoginModal({ isOpen, onClose }) {
       {/* Backdrop */}
       <div
         onClick={onClose}
-        style={{
-          position: 'fixed', inset: 0,
-          background: 'rgba(0,0,0,0.4)',
-          backdropFilter: 'blur(4px)',
-          zIndex: 2000,
-          animation: 'fadeIn 0.2s ease'
-        }}
+        className="fixed inset-0 bg-black/40 backdrop-blur-[4px] z-[2000] animate-[fadeIn_0.2s_ease]"
       />
 
       {/* Modal */}
-      <div style={{
-        position: 'fixed',
-        top: '50%', left: '50%',
-        transform: 'translate(-50%, -50%)',
-        width: '90%', maxWidth: '420px',
-        background: 'rgba(255,255,255,0.95)',
-        backdropFilter: 'blur(20px)',
-        borderRadius: '20px',
-        padding: '32px',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
-        border: '1px solid rgba(0,0,0,0.05)',
-        zIndex: 2001,
-        animation: 'fadeIn 0.3s ease'
-      }}>
+      <div className="glass-modal rounded-[20px] p-8 max-w-[420px] w-[90%] fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[2001] animate-[fadeIn_0.3s_ease]">
         {/* Close button */}
         <button
           onClick={onClose}
-          style={{
-            position: 'absolute', top: '16px', right: '16px',
-            background: 'none', border: 'none', cursor: 'pointer',
-            color: '#9CA3AF', padding: '4px'
-          }}
+          className="absolute top-4 right-4 bg-transparent border-none cursor-pointer text-gray-400 p-1 hover:text-gray-600 transition-colors"
         >
-          <X size={20} />
+          <span className="material-symbols-outlined text-[20px]">close</span>
         </button>
 
         {isAuthenticated ? (
           /* Logged in state */
-          <div style={{ textAlign: 'center' }}>
-            <div style={{
-              width: '64px', height: '64px', borderRadius: '50%',
-              background: 'linear-gradient(135deg, #FF5B00, #FF8C00)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              margin: '0 auto 16px', color: 'white', fontSize: '1.5rem', fontWeight: 700
-            }}>
+          <div className="text-center">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#FF5B00] to-[#FF8C00] flex items-center justify-center mx-auto mb-4 text-white text-2xl font-bold">
               {user?.email?.[0]?.toUpperCase() || '?'}
             </div>
-            <h3 style={{ margin: '0 0 4px', fontSize: '1.2rem', color: '#212529' }}>已登入</h3>
-            <p style={{ margin: '0 0 24px', color: '#5A626A', fontSize: '0.9rem' }}>{user?.email}</p>
+            <h3 className="m-0 mb-1 text-xl text-gray-900 font-bold">已登入</h3>
+            <p className="m-0 mb-6 text-gray-600 text-sm">{user?.email}</p>
             <button
               onClick={handleLogout}
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                width: '100%', padding: '12px',
-                background: '#F3F4F6', color: '#EF4444',
-                border: '1px solid #E5E7EB', borderRadius: '12px',
-                cursor: 'pointer', fontSize: '0.95rem', fontWeight: 500
-              }}
+              className="flex items-center justify-center gap-2 w-full p-3 bg-gray-100 text-red-500 border border-gray-200 rounded-xl cursor-pointer text-base font-medium hover:bg-gray-200 transition-colors"
             >
-              <LogOut size={18} /> 登出
+              <span className="material-symbols-outlined text-[18px]">logout</span> 登出
             </button>
           </div>
         ) : loginSent ? (
           /* Email sent confirmation */
-          <div style={{ textAlign: 'center' }}>
-            <div style={{
-              width: '64px', height: '64px', borderRadius: '50%',
-              background: 'rgba(16, 185, 129, 0.1)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              margin: '0 auto 16px'
-            }}>
-              <CheckCircle2 size={32} color="#10B981" />
+          <div className="text-center">
+            <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center mx-auto mb-4">
+              <span className="material-symbols-outlined text-[32px] text-emerald-500">check_circle</span>
             </div>
-            <h3 style={{ margin: '0 0 8px', fontSize: '1.2rem', color: '#212529' }}>登入連結已發送！</h3>
-            <p style={{ margin: '0 0 8px', color: '#5A626A', fontSize: '0.9rem', lineHeight: 1.6 }}>
-              我們已將登入連結寄到 <strong style={{ color: '#FF5B00' }}>{email}</strong>
+            <h3 className="m-0 mb-2 text-xl text-gray-900 font-bold">登入連結已發送！</h3>
+            <p className="m-0 mb-2 text-gray-600 text-sm leading-relaxed">
+              我們已將登入連結寄到 <strong className="text-primary">{email}</strong>
             </p>
-            <p style={{ margin: '0 0 24px', color: '#9CA3AF', fontSize: '0.8rem' }}>
+            <p className="m-0 mb-6 text-gray-400 text-xs">
               連結 15 分鐘內有效，請查看信箱（包含垃圾郵件）
             </p>
             <button
               onClick={() => { setEmail(''); onClose(); }}
-              style={{
-                width: '100%', padding: '12px',
-                background: '#F3F4F6', color: '#374151',
-                border: '1px solid #E5E7EB', borderRadius: '12px',
-                cursor: 'pointer', fontSize: '0.95rem', fontWeight: 500
-              }}
+              className="w-full p-3 bg-gray-100 text-gray-700 border border-gray-200 rounded-xl cursor-pointer text-base font-medium hover:bg-gray-200 transition-colors"
             >
               好的，我知道了
             </button>
@@ -127,54 +82,33 @@ export default function LoginModal({ isOpen, onClose }) {
         ) : (
           /* Login form */
           <>
-            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-              <div style={{
-                width: '56px', height: '56px', borderRadius: '16px',
-                background: 'linear-gradient(135deg, #FF5B00, #FF8C00)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                margin: '0 auto 16px'
-              }}>
-                <Mail size={28} color="white" />
+            <div className="text-center mb-6">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#FF5B00] to-[#FF8C00] flex items-center justify-center mx-auto mb-4">
+                <span className="material-symbols-outlined text-[28px] text-white">mail</span>
               </div>
-              <h3 style={{ margin: '0 0 4px', fontSize: '1.3rem', color: '#212529' }}>登入 Tickety</h3>
-              <p style={{ margin: 0, color: '#5A626A', fontSize: '0.9rem' }}>
+              <h3 className="m-0 mb-1 text-xl text-gray-900 font-bold">登入 Tickety</h3>
+              <p className="m-0 text-gray-600 text-sm">
                 輸入 Email，我們會寄一封登入連結給你
               </p>
             </div>
 
             <form onSubmit={handleSubmit}>
-              <div style={{ position: 'relative', marginBottom: '12px' }}>
-                <Mail
-                  size={18}
-                  style={{
-                    position: 'absolute', left: '14px', top: '50%',
-                    transform: 'translateY(-50%)', color: '#9CA3AF'
-                  }}
-                />
+              <div className="relative mb-3">
+                <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-[18px]">
+                  mail
+                </span>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="your@email.com"
                   required
-                  style={{
-                    width: '100%', padding: '14px 14px 14px 42px',
-                    background: '#FFFFFF',
-                    border: '1px solid #E5E7EB',
-                    borderRadius: '12px',
-                    fontSize: '1rem',
-                    color: '#212529',
-                    outline: 'none',
-                    transition: 'border-color 0.2s',
-                    boxSizing: 'border-box'
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = '#FF5B00'}
-                  onBlur={(e) => e.target.style.borderColor = '#E5E7EB'}
+                  className="w-full py-3.5 pr-3.5 pl-11 bg-white border border-gray-200 rounded-xl text-base text-gray-900 outline-none transition-colors box-border focus:border-primary"
                 />
               </div>
 
               {error && (
-                <p style={{ color: '#EF4444', fontSize: '0.85rem', margin: '0 0 12px', textAlign: 'center' }}>
+                <p className="text-red-500 text-sm m-0 mb-3 text-center">
                   {error}
                 </p>
               )}
@@ -182,25 +116,17 @@ export default function LoginModal({ isOpen, onClose }) {
               <button
                 type="submit"
                 disabled={sending || !email.trim()}
-                style={{
-                  width: '100%', padding: '14px',
-                  background: sending ? '#9CA3AF' : 'linear-gradient(135deg, #FF5B00, #FF8C00)',
-                  color: 'white', border: 'none', borderRadius: '12px',
-                  fontSize: '1rem', fontWeight: 600,
-                  cursor: sending ? 'not-allowed' : 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                  transition: 'all 0.2s',
-                  boxShadow: sending ? 'none' : '0 4px 15px rgba(255, 91, 0, 0.3)'
-                }}
+                className={`w-full p-3.5 text-white border-none rounded-xl text-base font-semibold flex items-center justify-center gap-2 transition-all ${
+                  sending
+                    ? 'bg-gray-400 cursor-not-allowed shadow-none'
+                    : 'bg-gradient-to-br from-[#FF5B00] to-[#FF8C00] cursor-pointer shadow-[0_4px_15px_rgba(255,91,0,0.3)] hover:shadow-[0_6px_20px_rgba(255,91,0,0.4)]'
+                }`}
               >
-                {sending ? '發送中...' : <>發送登入連結 <ArrowRight size={18} /></>}
+                {sending ? '發送中...' : <>發送登入連結 <span className="material-symbols-outlined text-[18px]">arrow_forward</span></>}
               </button>
             </form>
 
-            <p style={{
-              textAlign: 'center', margin: '16px 0 0',
-              color: '#9CA3AF', fontSize: '0.75rem'
-            }}>
+            <p className="text-center mt-4 mb-0 text-gray-400 text-xs">
               無需密碼，點擊信中連結即可完成登入
             </p>
           </>

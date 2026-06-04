@@ -7,9 +7,7 @@ import VenueFacilities from './components/Recommendations/VenueFacilities';
 import TicketHistory from './components/TaskTracking/TicketHistory';
 import ConcertSection from './components/Recommendations/ConcertSection';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { Ticket, AlertCircle, X, Bell, ExternalLink, Search, User } from 'lucide-react';
 import apiClient from './api/client';
-import { useMediaQuery } from './hooks/useMediaQuery';
 import MobileTabBar from './components/Layout/MobileTabBar';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LoginModal from './components/Auth/LoginModal';
@@ -25,6 +23,7 @@ function App() {
   const [heroSearchUrl, setHeroSearchUrl] = useState('');
   const [showLoginModal, setShowLoginModal] = useState(false);
   const { user, isAuthenticated, verifyToken, loading: authLoading } = useAuth();
+  const [activePanel, setActivePanel] = useState('tasks');
 
   // Handle magic link verification from URL
   useEffect(() => {
@@ -41,8 +40,6 @@ function App() {
       });
     }
   }, []);
-  const [activePanel, setActivePanel] = useState('tasks');
-  const { isMobile, isTablet } = useMediaQuery();
 
   // Auto clear error after 5 seconds
   useEffect(() => {
@@ -93,27 +90,21 @@ function App() {
   };
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: isMobile ? '16px 12px 80px' : '40px 20px', position: 'relative' }}>
+    <div className="relative pb-20 lg:pb-0 min-h-screen">
       
       {/* Global Error Toast */}
       {error && (
-        <div className="glass-panel animate-fade-in" style={{
-          position: 'fixed', top: '24px', left: isMobile ? '16px' : '50%', right: isMobile ? '16px' : 'auto', transform: isMobile ? 'none' : 'translateX(-50%)', zIndex: 1000,
-          background: 'rgba(255, 68, 68, 0.15)', border: '1px solid rgba(255, 68, 68, 0.4)',
-          padding: '16px 24px', display: 'flex', alignItems: 'center', gap: '12px', minWidth: isMobile ? 'auto' : '320px',
-          width: isMobile ? 'calc(100% - 32px)' : 'auto',
-          boxShadow: '0 8px 32px rgba(255, 0, 0, 0.2)'
-        }}>
-          <AlertCircle color="var(--color-danger)" size={24} />
-          <span style={{ flex: 1, color: '#212529', fontSize: '0.95rem' }}>{error}</span>
-          <button onClick={() => setError(null)} style={{ background: 'transparent', color: 'var(--color-text-muted)', opacity: 0.6, border: 'none', cursor: 'pointer' }}>
-            <X size={20} />
+        <div className="fixed top-6 left-4 right-4 lg:left-1/2 lg:right-auto lg:-translate-x-1/2 z-[1000] bg-red-500/15 border border-red-500/40 py-4 px-6 flex items-center gap-3 w-[calc(100%-32px)] lg:w-auto lg:min-w-[320px] shadow-[0_8px_32px_rgba(255,0,0,0.2)] rounded-2xl backdrop-blur-md animate-fade-in">
+          <span className="material-symbols-outlined text-danger text-2xl">error</span>
+          <span className="flex-1 text-gray-900 text-[0.95rem]">{error}</span>
+          <button onClick={() => setError(null)} className="bg-transparent text-text-muted opacity-60 border-none cursor-pointer hover:opacity-100 transition-opacity p-0 flex">
+            <span className="material-symbols-outlined text-[20px]">close</span>
           </button>
         </div>
       )}
 
       {/* Ticket Notifications */}
-      <div style={{ position: 'fixed', bottom: isMobile ? '80px' : '24px', right: isMobile ? 'auto' : '24px', left: isMobile ? '16px' : 'auto', zIndex: 1000, display: 'flex', flexDirection: 'column', gap: '12px', ...(isMobile ? { right: '16px' } : {}) }}>
+      <div className="fixed bottom-20 lg:bottom-6 right-4 lg:right-6 left-4 lg:left-auto z-[1000] flex flex-col gap-3">
         <AnimatePresence>
           {visibleToasts.map((toast) => (
             <motion.div
@@ -122,129 +113,90 @@ function App() {
               animate={{ opacity: 1, x: 0, scale: 1 }}
               exit={{ opacity: 0, x: 50, scale: 0.9 }}
               transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-              className="glass-panel"
-              style={{
-                width: isMobile ? 'calc(100% - 32px)' : '350px',
-                padding: '20px',
-                background: 'rgba(255, 255, 255, 0.95)',
-                border: '1px solid #E9ECEF',
-                boxShadow: '0 8px 32px rgba(232, 86, 10, 0.3)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '12px'
-              }}
+              className="glass-panel w-full lg:w-[350px] p-5 bg-white/95 border border-gray-200 shadow-[0_8px_32px_rgba(232,86,10,0.3)] flex flex-col gap-3 rounded-2xl"
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{ background: 'var(--color-primary)', borderRadius: '50%', padding: '6px' }}>
-                  <Bell size={16} color="#FFFFFF" />
+              <div className="flex items-center gap-2">
+                <div className="bg-primary rounded-full p-1.5 flex items-center justify-center">
+                  <span className="material-symbols-outlined text-white text-base">notifications</span>
                 </div>
-                <strong style={{ color: '#212529', flex: 1 }}>發現釋票！</strong>
+                <strong className="text-gray-900 flex-1">發現釋票！</strong>
                 <button 
                   onClick={() => setVisibleToasts(current => current.filter(t => t.id !== toast.id))}
-                  style={{ background: 'transparent', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer' }}
+                  className="bg-transparent border-none text-text-muted cursor-pointer hover:text-gray-800 transition-colors p-0 flex"
                 >
-                  <X size={16} />
+                  <span className="material-symbols-outlined text-base">close</span>
                 </button>
               </div>
-              <div style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <p style={{ margin: 0 }}><strong>活動：</strong> {toast.title}</p>
-                <p style={{ margin: 0 }}><strong>時間：</strong> {toast.time}</p>
+              <div className="text-text-muted text-sm flex flex-col gap-1">
+                <p className="m-0"><strong>活動：</strong> {toast.title}</p>
+                <p className="m-0"><strong>時間：</strong> {toast.time}</p>
               </div>
               <a 
                 href={toast.url} 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="glass-button"
-                style={{ textDecoration: 'none', fontSize: '0.95rem', padding: '10px' }}
+                className="glass-button no-underline text-[0.95rem] p-2.5 flex items-center justify-center gap-2 bg-primary/10 text-primary rounded-xl font-medium hover:bg-primary/20 transition-colors"
               >
-                直達購票連結 <ExternalLink size={16} />
+                直達購票連結 <span className="material-symbols-outlined text-base">open_in_new</span>
               </a>
             </motion.div>
           ))}
         </AnimatePresence>
       </div>
 
-      <header style={{ marginBottom: '40px', textAlign: 'center', position: 'relative', padding: isMobile ? '0' : undefined }}>
-        {/* Login Button — Top Right */}
-        <div style={{ position: 'absolute', top: '0', right: '0', zIndex: 10 }}>
+      <header className="bg-surface/90 backdrop-blur-xl docked full-width top-0 z-50 shadow-sm flex justify-between items-center w-full px-gutter py-md max-w-container-max mx-auto border-b border-white/50 sticky">
+        <h1 className="animate-fade-in m-0 relative z-10 inline-flex items-center gap-3 text-2xl lg:text-4xl font-bold">
+          <span className="material-symbols-outlined text-[32px] lg:text-[40px] text-primary">local_activity</span>
+          <span className="text-gradient">Tickety</span>
+        </h1>
+        <div className="relative z-10">
           <button
             onClick={() => setShowLoginModal(true)}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '6px',
-              padding: isMobile ? '8px 12px' : '8px 16px',
-              background: isAuthenticated ? 'rgba(255, 91, 0, 0.08)' : 'rgba(255,255,255,0.9)',
-              border: isAuthenticated ? '1px solid var(--color-primary)' : '1px solid #E5E7EB',
-              borderRadius: '24px', cursor: 'pointer',
-              color: isAuthenticated ? 'var(--color-primary)' : '#374151',
-              fontSize: '0.85rem', fontWeight: 500,
-              transition: 'all 0.2s',
-              backdropFilter: 'blur(8px)',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
-            }}
+            className={`flex items-center gap-1.5 px-3 lg:px-4 py-2 rounded-full cursor-pointer text-sm font-medium transition-all backdrop-blur-md shadow-[0_2px_8px_rgba(0,0,0,0.06)] border ${
+              isAuthenticated 
+                ? 'bg-[#FF5B00]/10 border-primary text-primary' 
+                : 'bg-white/90 border-gray-200 text-gray-700'
+            }`}
           >
-            <User size={16} />
+            <span className="material-symbols-outlined text-base">person</span>
             {isAuthenticated ? (isMobile ? '' : user?.email?.split('@')[0]) : (isMobile ? '登入' : '登入帳號')}
           </button>
         </div>
-        <div style={{
-          position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-          width: '300px', height: '100px', background: 'none',
-          filter: 'blur(20px)', zIndex: 0, pointerEvents: 'none'
-        }} />
-        <h1 className="animate-fade-in" style={{ position: 'relative', zIndex: 1, display: 'inline-flex', alignItems: 'center', gap: '12px', fontSize: isMobile ? '1.6rem' : '2.8rem', fontWeight: 700 }}>
-          <Ticket size={40} color="var(--color-primary)" />
-          <span className="text-gradient">Tickety</span>
-        </h1>
-        <p className="animate-fade-in animate-delay-1" style={{ position: 'relative', zIndex: 1, color: 'var(--color-text-muted)', marginTop: '8px', fontSize: '1.1rem' }}>
-          全自動背景監控票券，智慧推薦周邊住宿與交通
-        </p>
+      </header>
 
-        {/* OTA Style Hero Search Bar */}
-        <div className="animate-fade-in animate-delay-1" style={{ 
-          maxWidth: '800px', margin: '32px auto 0', display: 'flex', flexDirection: 'column', gap: '16px', position: 'relative', zIndex: 2 
-        }}>
-          <div style={{ 
-            display: 'flex', 
-            flexDirection: isMobile ? 'column' : 'row',
-            background: '#FFFFFF', 
-            backdropFilter: 'blur(20px)',
-            borderRadius: '16px', 
-            border: '1px solid #E9ECEF',
-            padding: '8px',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.05)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', padding: '0 16px', color: '#ADB5BD' }}>
-              <Search size={24} />
+      <main className="max-w-container-max mx-auto px-gutter py-lg flex flex-col gap-md">
+        
+        {/* Hero Section */}
+        <div className="glass-card animate-fade-in animate-delay-1 max-w-[800px] mx-auto w-full flex flex-col gap-4 relative z-10 p-6 lg:p-8 rounded-[24px] mb-4 border border-white/40 shadow-sm bg-white/40">
+          <div className="text-center mb-2">
+            <p className="text-text-muted mt-2 text-base lg:text-lg">
+              全自動背景監控票券，智慧推薦周邊住宿與交通
+            </p>
+          </div>
+          
+          <div className="flex flex-col lg:flex-row bg-white/60 backdrop-blur-xl rounded-2xl border border-white/60 p-2 shadow-[0_8px_32px_rgba(0,0,0,0.05)]">
+            <div className="flex items-center px-4 text-gray-400">
+              <span className="material-symbols-outlined text-2xl">search</span>
             </div>
             <input 
               type="url"
               placeholder="貼上拓元、KKTIX 等售票連結，立即開啟智能監控..."
               value={heroSearchUrl}
               onChange={e => setHeroSearchUrl(e.target.value)}
-              style={{
-                flex: 1,
-                background: 'transparent',
-                border: 'none',
-                color: '#212529',
-                fontSize: '1.1rem',
-                outline: 'none',
-                padding: '16px 0',
-                width: '100%'
-              }}
+              className="flex-1 bg-transparent border-none text-gray-900 text-base lg:text-lg outline-none py-3 lg:py-4 w-full"
             />
             <button 
-              className="glass-button" 
-              style={{ background: 'var(--color-primary)', color: 'white', border: 'none', padding: '0 32px', fontSize: '1.1rem', borderRadius: '12px', whiteSpace: 'nowrap' }}
+              className="bg-primary text-white border-none px-8 py-3 lg:py-0 text-base lg:text-lg rounded-xl whitespace-nowrap cursor-pointer hover:bg-[#E8560A] transition-colors font-medium mt-2 lg:mt-0"
               onClick={() => {
                 document.getElementById('task-input-section')?.scrollIntoView({ behavior: 'smooth' });
               }}
             >
-              開始監控
+              開始追蹤
             </button>
           </div>
           
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: isMobile ? 'nowrap' : 'wrap', overflowX: isMobile ? 'auto' : 'visible', whiteSpace: isMobile ? 'nowrap' : 'normal', WebkitOverflowScrolling: 'touch' }}>
-            <span style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', display: 'flex', alignItems: 'center' }}>熱門監控標籤：</span>
+          <div className="flex justify-center gap-3 flex-nowrap lg:flex-wrap overflow-x-auto lg:overflow-x-visible whitespace-nowrap lg:whitespace-normal pb-2 lg:pb-0 scrollbar-hide">
+            <span className="text-text-muted text-sm flex items-center shrink-0">熱門監控標籤：</span>
             {['#五月天', '#Blackpink', '#周杰倫', '#宇多田光'].map(tag => (
               <button 
                 key={tag}
@@ -252,73 +204,61 @@ function App() {
                   setHeroSearchUrl(`https://tixcraft.com/activity/detail/${tag.replace('#', '')}`);
                   document.getElementById('task-input-section')?.scrollIntoView({ behavior: 'smooth' });
                 }}
-                style={{
-                  background: '#F8F9FA',
-                  border: '1px solid #E9ECEF',
-                  borderRadius: '20px',
-                  padding: '4px 12px',
-                  color: 'var(--color-secondary)',
-                  fontSize: '0.85rem',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseOver={e => e.target.style.background = '#E9ECEF'}
-                onMouseOut={e => e.target.style.background = '#F8F9FA'}
+                className="bg-gray-50 border border-gray-200 rounded-full px-4 py-1.5 text-secondary text-sm cursor-pointer hover:bg-gray-200 transition-colors shrink-0"
               >
                 {tag}
               </button>
             ))}
           </div>
         </div>
-      </header>
 
-      {/* System Status Bar */}
-      <div className="animate-fade-in" style={{ 
-        display: 'flex', justifyContent: 'center', gap: '16px', marginBottom: '40px', flexWrap: 'wrap'
-      }}>
-        <div style={{ background: '#FFFFFF', padding: '12px 24px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid #E9ECEF', boxShadow: '0 4px 15px rgba(0,0,0,0.02)' }}>
-          <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: serverStatus === '良好' ? 'var(--color-success)' : 'var(--color-danger)' }}></span>
-          <span style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>伺服器狀態</span>
-          <strong style={{ color: '#212529' }}>{serverStatus}</strong>
-        </div>
-        <div style={{ background: '#FFFFFF', padding: '12px 24px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid #E9ECEF', boxShadow: '0 4px 15px rgba(0,0,0,0.02)' }}>
-          <span style={{ color: 'var(--color-secondary)' }}>🔍</span>
-          <span style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>監控中任務數</span>
-          <strong style={{ color: '#212529' }}>{tasks.filter(t => t.status === '監控中').length}</strong>
-        </div>
-        <div style={{ background: '#FFFFFF', padding: '12px 24px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid #E9ECEF', boxShadow: '0 4px 15px rgba(0,0,0,0.02)' }}>
-          <span style={{ color: 'var(--color-accent)' }}>🎫</span>
-          <span style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>近期演唱會場數</span>
-          <strong style={{ color: '#212529' }}>{concerts.length}</strong>
-        </div>
-      </div>
-
-      <ErrorBoundary>
-        <main style={{ display: isMobile ? 'block' : 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '40px', alignItems: 'start' }}>
-          {/* Left Column: Task Panel */}
-          <div style={{ display: isMobile && activePanel !== 'tasks' ? 'none' : 'flex', flexDirection: 'column', gap: '16px' }}>
-            <TaskPanel 
-              tasks={tasks}
-              selectedTask={selectedTask}
-              onTaskAdded={handleTaskAdded}
-              onTaskSelected={handleTaskSelected}
-              onError={setError}
-              initialUrl={heroSearchUrl}
-            />
+        {/* System Status Bar */}
+        <div className="animate-fade-in flex justify-center gap-4 mb-4 flex-wrap">
+          <div className="bg-white/80 backdrop-blur-md px-6 py-3 rounded-2xl flex items-center gap-2 border border-white/50 shadow-[0_4px_15px_rgba(0,0,0,0.02)]">
+            <span className={`inline-block w-2.5 h-2.5 rounded-full ${serverStatus === '良好' ? 'bg-success' : 'bg-danger'}`}></span>
+            <span className="text-text-muted text-sm">伺服器狀態</span>
+            <strong className="text-gray-900">{serverStatus}</strong>
           </div>
-
-          {/* Right Column: Recommendations */}
-          <div style={{ position: isMobile ? 'static' : 'sticky', top: '40px', display: isMobile && activePanel !== 'recommendations' ? 'none' : 'flex', flexDirection: 'column', gap: '32px', marginTop: isMobile ? '0' : undefined }}>
-            {selectedTask && (
-              <TicketHistory taskId={selectedTask.id} taskStatus={selectedTask.status} />
-            )}
-            <RecommendationSection selectedTask={selectedTask} />
-            <VenueFacilities selectedTask={selectedTask} />
-            <CreditCardDeals selectedTask={selectedTask} />
-            <ConcertSection concerts={concerts} />
+          <div className="bg-white/80 backdrop-blur-md px-6 py-3 rounded-2xl flex items-center gap-2 border border-white/50 shadow-[0_4px_15px_rgba(0,0,0,0.02)]">
+            <span className="material-symbols-outlined text-secondary text-[20px]">search</span>
+            <span className="text-text-muted text-sm">監控中任務數</span>
+            <strong className="text-gray-900">{tasks.filter(t => t.status === '監控中').length}</strong>
           </div>
-        </main>
-      </ErrorBoundary>
+          <div className="bg-white/80 backdrop-blur-md px-6 py-3 rounded-2xl flex items-center gap-2 border border-white/50 shadow-[0_4px_15px_rgba(0,0,0,0.02)]">
+            <span className="material-symbols-outlined text-accent text-[20px]">local_activity</span>
+            <span className="text-text-muted text-sm">近期演唱會場數</span>
+            <strong className="text-gray-900">{concerts.length}</strong>
+          </div>
+        </div>
+
+        <ErrorBoundary>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+            {/* Left Column: Task Panel */}
+            <div className={`lg:col-span-8 flex-col gap-lg ${activePanel === 'tasks' ? 'flex' : 'hidden lg:flex'}`}>
+              <TaskPanel 
+                tasks={tasks}
+                selectedTask={selectedTask}
+                onTaskAdded={handleTaskAdded}
+                onTaskSelected={handleTaskSelected}
+                onError={setError}
+                initialUrl={heroSearchUrl}
+              />
+            </div>
+
+            {/* Right Column: Recommendations */}
+            <div className={`lg:col-span-4 flex-col gap-gutter ${activePanel === 'recommendations' ? 'flex' : 'hidden lg:flex'}`}>
+              {selectedTask && (
+                <TicketHistory taskId={selectedTask.id} taskStatus={selectedTask.status} />
+              )}
+              <RecommendationSection selectedTask={selectedTask} />
+              <VenueFacilities selectedTask={selectedTask} />
+              <CreditCardDeals selectedTask={selectedTask} />
+              <ConcertSection concerts={concerts} />
+            </div>
+          </div>
+        </ErrorBoundary>
+
+      </main>
 
       <MobileTabBar 
         activeTab={activePanel} 

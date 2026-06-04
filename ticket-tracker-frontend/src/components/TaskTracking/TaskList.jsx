@@ -1,6 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Clock, CheckCircle2, Activity, ChevronDown, ChevronUp, Terminal } from 'lucide-react';
-import { useMediaQuery } from '../../hooks/useMediaQuery';
 
 function TaskLogTerminal({ isActive }) {
   const [logs, setLogs] = useState([]);
@@ -33,11 +31,11 @@ function TaskLogTerminal({ isActive }) {
   if (!isActive) return null;
 
   return (
-    <div style={{ marginTop: '16px', background: '#F0F2F5', borderRadius: '8px', padding: '12px', border: '1px solid #E9ECEF', maxHeight: '150px', overflowY: 'auto', fontFamily: 'monospace' }}>
+    <div className="mt-3 bg-surface-container-highest/50 rounded p-2 font-mono text-xs text-on-surface-variant h-20 overflow-hidden overflow-y-auto">
       {logs.map((log) => (
-        <div key={log.id} style={{ color: '#212529', fontSize: '0.8rem', marginBottom: '4px', display: 'flex', gap: '8px' }}>
-          <span style={{ color: '#5A626A' }}>[{log.time}]</span>
-          <span style={{ color: 'var(--color-primary)' }}>{log.text}</span>
+        <div key={log.id} className="mb-1 flex gap-2">
+          <span className="opacity-70">[{log.time}]</span>
+          <span className="text-primary">{log.text}</span>
         </div>
       ))}
       <div ref={bottomRef} />
@@ -46,7 +44,6 @@ function TaskLogTerminal({ isActive }) {
 }
 
 export default function TaskList({ tasks, selectedTask, onTaskSelected }) {
-  const { isMobile } = useMediaQuery();
   const [expandedTaskId, setExpandedTaskId] = useState(null);
   const [logExpandedTaskId, setLogExpandedTaskId] = useState(null);
   const [statusFilter, setStatusFilter] = useState('all');
@@ -62,7 +59,6 @@ export default function TaskList({ tasks, selectedTask, onTaskSelected }) {
     setLogExpandedTaskId(prev => prev === id ? null : id);
   };
 
-  // Detect platform from URL
   const detectPlatform = (url) => {
     if (!url) return '其他';
     const lower = url.toLowerCase();
@@ -72,183 +68,141 @@ export default function TaskList({ tasks, selectedTask, onTaskSelected }) {
     return '其他';
   };
 
-  // Get unique platforms from tasks
   const platforms = [...new Set(tasks.map(t => detectPlatform(t.url)))];
 
-  // Apply filters
   const filteredTasks = tasks.filter(task => {
     const matchStatus = statusFilter === 'all' || task.status === statusFilter;
     const matchPlatform = platformFilter === 'all' || detectPlatform(task.url) === platformFilter;
     return matchStatus && matchPlatform;
   });
 
-  const PLATFORM_COLORS = {
-    '拓元': '#FF5B00',
-    'KKTIX': '#00B3CC',
-    'TicketPlus': '#6C63FF',
-    '其他': '#5A626A'
-  };
-
   if (!tasks || tasks.length === 0) {
     return (
-      <div className="glass-panel animate-fade-in animate-delay-1" style={{ padding: '32px', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+      <div className="glass-card rounded-xl p-lg text-center text-on-surface-variant animate-fade-in animate-delay-1">
         目前沒有監控中的任務
       </div>
     );
   }
 
   return (
-    <div className="animate-fade-in animate-delay-1" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.25rem', paddingLeft: '8px', marginBottom: '0' }}>
-        <Activity size={24} color="var(--color-primary)" />
+    <div className="animate-fade-in animate-delay-1 flex flex-col gap-4">
+      <h3 className="flex items-center gap-2 text-xl pl-2 m-0 text-on-surface">
+        <span className="material-symbols-outlined text-primary text-[24px]">monitoring</span>
         執行中任務
-        <span style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', fontWeight: 400 }}>({filteredTasks.length}/{tasks.length})</span>
+        <span className="text-sm text-on-surface-variant font-normal">({filteredTasks.length}/{tasks.length})</span>
       </h3>
       
-      {/* Filter Bar */}
-      <div style={{ display: 'flex', gap: '8px', flexWrap: isMobile ? 'nowrap' : 'wrap', paddingLeft: '8px', overflowX: isMobile ? 'auto' : 'visible', WebkitOverflowScrolling: 'touch' }}>
-        {/* Status Filters */}
+      <div className={`flex gap-2 pl-2 ${isMobile ? 'flex-nowrap overflow-x-auto touch-pan-x' : 'flex-wrap overflow-visible'}`}>
         {['all', '監控中', '已發現'].map(status => (
           <button
             key={status}
             onClick={() => setStatusFilter(status)}
-            style={{
-              padding: '4px 12px',
-              borderRadius: '20px',
-              border: statusFilter === status ? '1px solid var(--color-primary)' : '1px solid #E9ECEF',
-              background: statusFilter === status ? 'rgba(255, 91, 0, 0.08)' : '#FFFFFF',
-              color: statusFilter === status ? 'var(--color-primary)' : 'var(--color-text-muted)',
-              fontSize: '0.8rem',
-              fontWeight: 500,
-              cursor: 'pointer',
-              transition: 'all 0.2s ease'
-            }}
+            className={`
+              px-3 py-1 rounded-full text-xs font-medium cursor-pointer transition-all duration-200 border whitespace-nowrap
+              ${statusFilter === status 
+                ? 'border-primary bg-primary/10 text-primary' 
+                : 'border-surface-variant bg-surface text-on-surface-variant hover:bg-surface-container'}
+            `}
           >
             {status === 'all' ? '全部狀態' : status}
           </button>
         ))}
 
-        {/* Divider */}
-        <div style={{ width: '1px', background: '#E9ECEF', margin: '0 4px' }} />
+        <div className="w-[1px] bg-surface-variant mx-1" />
 
-        {/* Platform Filters */}
-        {platforms.map(platform => (
-          <button
-            key={platform}
-            onClick={() => setPlatformFilter(prev => prev === platform ? 'all' : platform)}
-            style={{
-              padding: '4px 12px',
-              borderRadius: '20px',
-              border: platformFilter === platform ? `1px solid ${PLATFORM_COLORS[platform]}` : '1px solid #E9ECEF',
-              background: platformFilter === platform ? `${PLATFORM_COLORS[platform]}12` : '#FFFFFF',
-              color: platformFilter === platform ? PLATFORM_COLORS[platform] : 'var(--color-text-muted)',
-              fontSize: '0.8rem',
-              fontWeight: 500,
-              cursor: 'pointer',
-              transition: 'all 0.2s ease'
-            }}
-          >
-            {platform}
-          </button>
-        ))}
+        {platforms.map(platform => {
+          const isActive = platformFilter === platform;
+          return (
+            <button
+              key={platform}
+              onClick={() => setPlatformFilter(prev => prev === platform ? 'all' : platform)}
+              className={`
+                px-3 py-1 rounded-full text-xs font-medium cursor-pointer transition-all duration-200 border whitespace-nowrap
+                ${isActive 
+                  ? 'border-primary bg-primary/10 text-primary' 
+                  : 'border-surface-variant bg-surface text-on-surface-variant hover:bg-surface-container'}
+              `}
+            >
+              {platform}
+            </button>
+          );
+        })}
       </div>
       
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: `repeat(auto-fill, minmax(${isMobile ? '240px' : '280px'}, 1fr))`, 
-        gap: isMobile ? '16px' : '24px' 
-      }}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
         {filteredTasks.map((task) => {
           const isActive = selectedTask?.id === task.id;
-          const isExpanded = expandedTaskId === task.id;
           const isLogsExpanded = logExpandedTaskId === task.id;
           
-          // Generate a deterministic image based on venue or URL length
-          const imgId = (task.id || 1) % 10 + 10;
-          const imageUrl = `https://images.unsplash.com/photo-1540039155732-d6824b2f155c?w=400&q=80`; // Generic concert
+          const imageUrl = `https://images.unsplash.com/photo-1540039155732-d6824b2f155c?w=400&q=80`;
           
           return (
             <div 
               key={task.id} 
-              className="glass-panel" 
+              className={`
+                glass-card rounded-xl p-md flex flex-col cursor-pointer transition-all duration-300 gap-3
+                ${isActive ? 'border-primary bg-primary/5 shadow-[0_8px_30px_rgba(var(--color-primary-rgb),0.15)] -translate-y-1' : 'border-black/5 bg-white/90 shadow-[0_4px_20px_rgba(0,0,0,0.08)]'}
+              `}
               onClick={() => onTaskSelected(task)}
-              style={{ 
-                display: 'flex', 
-                flexDirection: 'column',
-                cursor: 'pointer',
-                overflow: 'hidden',
-                border: isActive ? '1px solid var(--color-primary)' : '1px solid rgba(0, 0, 0, 0.05)',
-                background: isActive ? 'rgba(255, 91, 0, 0.05)' : 'rgba(255, 255, 255, 0.9)',
-                boxShadow: isActive ? '0 8px 30px rgba(255, 91, 0, 0.15)' : '0 4px 20px rgba(0, 0, 0, 0.08)',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                transform: isActive ? 'translateY(-4px)' : 'none'
-              }}
             >
               {/* Image Header */}
-              <div style={{ 
-                height: isMobile ? '100px' : '140px', 
-                backgroundImage: `url(${imageUrl})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                position: 'relative'
-              }}>
-                <div style={{
-                  position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                  background: 'linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0.85))'
-                }} />
-                <div style={{ position: 'absolute', top: '12px', right: '12px' }}>
-                  <span style={{ 
-                    background: task.status === '監控中' ? 'var(--color-secondary)' : 'var(--color-primary)', 
-                    color: 'white',
-                    padding: '6px 12px', 
-                    borderRadius: '20px', 
-                    fontSize: '0.8rem',
-                    fontWeight: 'bold',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    boxShadow: '0 2px 10px rgba(0,0,0,0.3)'
-                  }}>
-                    {task.status === '監控中' ? <Clock size={14} /> : <CheckCircle2 size={14} />}
-                    {task.status || '監控中'}
+              <div 
+                className="relative bg-cover bg-center rounded-lg overflow-hidden h-[100px] md:h-[120px]"
+                style={{ backgroundImage: `url(${imageUrl})` }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-b from-white/0 to-white/60" />
+                <div className="absolute top-2 right-2">
+                  <span className={`
+                    text-white px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-sm
+                    ${task.status === '監控中' ? 'bg-secondary' : 'bg-primary'}
+                  `}>
+                    {task.status === '監控中' ? (
+                      <>
+                        <div className="w-2 h-2 rounded-full bg-tertiary animate-pulse-green"></div>
+                        <span>監控中</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                        <span>{task.status || '已發現'}</span>
+                      </>
+                    )}
                   </span>
                 </div>
               </div>
 
               {/* Content Body */}
-              <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px', flex: 1 }}>
-                <div style={{ color: 'var(--color-text-muted)', fontSize: '0.8rem' }}>
+              <div className="flex flex-col gap-2 flex-1">
+                <div className="text-on-surface-variant text-xs">
                   建立於 {task.createdAt ? new Date(task.createdAt).toLocaleDateString() : new Date().toLocaleDateString()}
                 </div>
                 
-                <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: 'var(--color-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <h4 className="m-0 text-lg font-semibold text-on-surface whitespace-nowrap overflow-hidden text-ellipsis">
                   {task.venue || '未指定場館活動'}
                 </h4>
                 
-                <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--color-text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <p className="m-0 text-sm text-on-surface-variant whitespace-nowrap overflow-hidden text-ellipsis">
                   {task.url}
                 </p>
                 
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '4px' }}>
-                  {task.departure && <span style={{ fontSize: '0.8rem', padding: '4px 8px', background: '#F8F9FA', borderRadius: '4px', color: 'var(--color-text-muted)' }}>📍 {task.departure}</span>}
-                  {task.budget && <span style={{ fontSize: '0.8rem', padding: '4px 8px', background: '#F8F9FA', borderRadius: '4px', color: 'var(--color-text-muted)' }}>💰 ${task.budget}</span>}
+                <div className="flex gap-2 flex-wrap mt-1">
+                  {task.departure && <span className="text-xs px-2 py-1 bg-surface-container-low rounded text-on-surface-variant flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">location_on</span> {task.departure}</span>}
+                  {task.budget && <span className="text-xs px-2 py-1 bg-surface-container-low rounded text-on-surface-variant flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">attach_money</span> {task.budget}</span>}
                 </div>
 
-                <div style={{ marginTop: 'auto', paddingTop: '16px', display: 'flex', gap: '8px' }}>
+                <div className="mt-auto pt-3 flex gap-2">
                   <button 
                     onClick={(e) => toggleLogs(e, task.id)}
-                    className="glass-button"
-                    style={{ flex: 1, padding: '8px', fontSize: '0.9rem', background: '#F8F9FA', color: 'var(--color-text)', boxShadow: 'none' }}
+                    className="glass-button flex-1 p-2 text-sm bg-surface-container-low text-on-surface shadow-none hover:bg-surface-container flex items-center justify-center gap-1"
                   >
-                    <Terminal size={16} /> 狀態日誌
+                    <span className="material-symbols-outlined text-[16px]">terminal</span> 狀態日誌
                   </button>
                   <a 
                     href={task.url}
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={e => e.stopPropagation()}
-                    className="glass-button"
-                    style={{ flex: 1, padding: '8px', fontSize: '0.9rem', textAlign: 'center', textDecoration: 'none', background: 'var(--color-primary)', color: 'white', border: 'none' }}
+                    className="glass-button flex-1 p-2 text-sm text-center no-underline bg-primary text-white border-none hover:opacity-90"
                   >
                     快速查看
                   </a>

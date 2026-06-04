@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Store, Bath, BatteryCharging, MapPin, ChevronDown, ChevronUp, ExternalLink, Navigation } from 'lucide-react';
 
 // Static venue → nearby facilities mapping
 // In production, this would come from Google Places API
@@ -70,9 +69,9 @@ function findFacilities(venue) {
 }
 
 const CATEGORY_CONFIG = [
-  { key: 'convenienceStores', label: '便利商店', icon: Store, color: '#10b981', emoji: '🏪' },
-  { key: 'restrooms', label: '廁所', icon: Bath, color: '#3B82F6', emoji: '🚻' },
-  { key: 'chargingStations', label: '行動電源租借', icon: BatteryCharging, color: '#F59E0B', emoji: '🔋' }
+  { key: 'convenienceStores', label: '便利商店', icon: 'store', color: '#10b981', emoji: '🏪' },
+  { key: 'restrooms', label: '廁所', icon: 'wc', color: '#3B82F6', emoji: '🚻' },
+  { key: 'chargingStations', label: '行動電源租借', icon: 'battery_charging_full', color: '#F59E0B', emoji: '🔋' }
 ];
 
 const containerVariants = {
@@ -104,36 +103,33 @@ export default function VenueFacilities({ selectedTask }) {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
+      className="glass-card rounded-xl p-md flex flex-col gap-4"
     >
       {/* Section Header */}
       <div 
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
+        className="flex items-center justify-between cursor-pointer"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.25rem', margin: 0 }}>
-          <MapPin size={24} color="var(--color-secondary)" />
+        <h3 className="flex items-center gap-2 text-xl m-0">
+          <span className="material-symbols-rounded text-2xl text-[var(--color-secondary)]">location_on</span>
           場館周邊設施
         </h3>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span className="badge" style={{
-            background: 'var(--color-secondary)',
-            color: '#FFFFFF',
-            padding: '2px 8px',
-            borderRadius: '4px',
-            fontSize: '0.7rem',
-            fontWeight: 'bold'
-          }}>
+        <div className="flex items-center gap-2">
+          <span className="badge bg-[var(--color-secondary)] text-white px-2 py-0.5 rounded text-[0.7rem] font-bold">
             {venue}
           </span>
-          {isExpanded ? <ChevronUp size={20} color="var(--color-text-muted)" /> : <ChevronDown size={20} color="var(--color-text-muted)" />}
+          {isExpanded ? (
+            <span className="material-symbols-rounded text-xl text-[var(--color-text-muted)]">expand_less</span>
+          ) : (
+            <span className="material-symbols-rounded text-xl text-[var(--color-text-muted)]">expand_more</span>
+          )}
         </div>
       </div>
 
       {isExpanded && (
         <>
           {/* Category Tabs */}
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div className="flex gap-2">
             {CATEGORY_CONFIG.map(cat => {
               const count = (facilities[cat.key] || []).length;
               const isActive = activeCategory === cat.key;
@@ -141,23 +137,14 @@ export default function VenueFacilities({ selectedTask }) {
                 <button
                   key={cat.key}
                   onClick={() => setActiveCategory(cat.key)}
+                  className="flex-1 px-2 py-2.5 rounded-xl flex flex-col items-center gap-1 cursor-pointer transition-all duration-200"
                   style={{
-                    flex: 1,
-                    padding: '10px 8px',
-                    borderRadius: '12px',
                     border: isActive ? `1px solid ${cat.color}` : '1px solid #E9ECEF',
-                    background: isActive ? `${cat.color}10` : '#FFFFFF',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '4px',
-                    transition: 'all 0.2s ease'
+                    background: isActive ? `${cat.color}10` : '#FFFFFF'
                   }}
                 >
-                  <span style={{ fontSize: '1.2rem' }}>{cat.emoji}</span>
-                  <span style={{
-                    fontSize: '0.75rem',
+                  <span className="text-[1.2rem]">{cat.emoji}</span>
+                  <span className="text-[0.75rem]" style={{
                     fontWeight: isActive ? 600 : 400,
                     color: isActive ? cat.color : 'var(--color-text-muted)'
                   }}>
@@ -174,67 +161,50 @@ export default function VenueFacilities({ selectedTask }) {
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}
+            className="flex flex-col gap-2.5"
           >
             {currentItems.length > 0 ? currentItems.map((item, idx) => (
               <motion.div
                 key={idx}
                 variants={itemVariants}
                 whileHover={{ y: -2 }}
-                className="glass-panel"
-                style={{
-                  padding: '14px 16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  cursor: 'pointer',
-                  position: 'relative',
-                  overflow: 'hidden'
-                }}
+                className="glass-panel p-3.5 flex items-center gap-3 cursor-pointer relative overflow-hidden"
                 onClick={() => {
                   const query = item.address || item.name;
                   window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`, '_blank');
                 }}
               >
                 {/* Color accent bar */}
-                <div style={{
-                  position: 'absolute', left: 0, top: 0, bottom: 0, width: '3px',
-                  background: activeCfg.color
-                }} />
+                <div className="absolute left-0 top-0 bottom-0 w-[3px]" style={{ background: activeCfg.color }} />
 
                 {/* Icon */}
-                <div style={{
-                  width: '40px', height: '40px', borderRadius: '10px',
-                  background: `${activeCfg.color}12`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  flexShrink: 0
-                }}>
-                  <activeCfg.icon size={20} color={activeCfg.color} />
+                <div 
+                  className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0"
+                  style={{ background: `${activeCfg.color}12` }}
+                >
+                  <span className="material-symbols-rounded text-[20px]" style={{ color: activeCfg.color }}>{activeCfg.icon}</span>
                 </div>
 
                 {/* Info */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--color-text)' }}>
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-[0.9rem] text-[var(--color-text)]">
                     {item.name}
                   </div>
-                  <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', marginTop: '2px' }}>
+                  <div className="text-[0.78rem] text-[var(--color-text-muted)] mt-[2px]">
                     {item.address || item.note || ''}
                   </div>
                 </div>
 
                 {/* Distance */}
-                <div style={{
-                  display: 'flex', alignItems: 'center', gap: '4px',
-                  flexShrink: 0
-                }}>
-                  <Navigation size={12} color={activeCfg.color} />
-                  <span style={{ fontSize: '0.78rem', color: activeCfg.color, fontWeight: 600, whiteSpace: 'nowrap' }}>
+                <div className="flex items-center gap-1 shrink-0">
+                  <span className="material-symbols-rounded text-[12px]" style={{ color: activeCfg.color }}>near_me</span>
+                  <span className="text-[0.78rem] font-semibold whitespace-nowrap" style={{ color: activeCfg.color }}>
                     {item.distance}
                   </span>
                 </div>
               </motion.div>
             )) : (
-              <div className="glass-panel" style={{ padding: '20px', textAlign: 'center', color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>
+              <div className="glass-panel p-5 text-center text-[var(--color-text-muted)] text-[0.9rem]">
                 此場館暫無 {activeCfg.label} 資料
               </div>
             )}
@@ -246,24 +216,11 @@ export default function VenueFacilities({ selectedTask }) {
             href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue + ' 附近便利商店')}`}
             target="_blank"
             rel="noopener noreferrer"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              padding: '10px',
-              borderRadius: '10px',
-              background: '#FFFFFF',
-              border: '1px solid #E9ECEF',
-              color: 'var(--color-text-muted)',
-              fontSize: '0.85rem',
-              textDecoration: 'none',
-              transition: 'all 0.2s ease',
-              cursor: 'pointer'
-            }}
-            whileHover={{ background: '#F8F9FA', borderColor: 'var(--color-secondary)' }}
+            className="flex items-center justify-center gap-2 p-2.5 rounded-[10px] bg-white border border-[#E9ECEF] text-[var(--color-text-muted)] text-[0.85rem] no-underline transition-all duration-200 cursor-pointer hover:bg-[#F8F9FA] hover:border-[var(--color-secondary)]"
           >
-            <MapPin size={16} /> 在 Google Maps 上查看更多設施 <ExternalLink size={14} />
+            <span className="material-symbols-rounded text-[16px]">location_on</span>
+            在 Google Maps 上查看更多設施
+            <span className="material-symbols-rounded text-[14px]">open_in_new</span>
           </motion.a>
         </>
       )}
