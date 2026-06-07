@@ -12,7 +12,8 @@ def send_task_created_email(to_email: str, target_url: str):
     if not SENDGRID_API_KEY or not SENDER_EMAIL:
         print("SendGrid credentials are not configured properly.")
         return False
-        
+    FRONTEND_URL = os.getenv("FRONTEND_URL", "https://tickety-v1.vercel.app")
+    
     message = Mail(
         from_email=Email(SENDER_EMAIL, "Tickety 售票通知"),
         to_emails=to_email,
@@ -23,6 +24,11 @@ def send_task_created_email(to_email: str, target_url: str):
             <p>您好，</p>
             <p>您已成功啟動售票監控任務。我們將在背景為您持續追蹤以下網址：</p>
             <p><strong><a href="{target_url}" style="color: #00aaff;">{target_url}</a></strong></p>
+            <p>您可以隨時回到 Tickety 系統查看歷史紀錄與任務狀態：</p>
+            <a href="{FRONTEND_URL}"
+               style="display:inline-block;margin-top:10px;margin-bottom:20px;background:linear-gradient(135deg,#ff9a56,#ff6b35);color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">
+               回系統查看狀態 →
+            </a>
             <p>一旦偵測到票券釋出，我們將立即透過此 Email 通知您。</p>
             <hr style="border: 0; border-top: 1px solid #e0e0e0; margin: 20px 0;" />
             <p style="font-size: 12px; color: #888;">此為系統自動發送之信件，請勿直接回覆。</p>
@@ -43,7 +49,8 @@ def send_ticket_alert(to_email: str, ticket_url: str):
     if not SENDGRID_API_KEY or not SENDER_EMAIL:
         print("SendGrid credentials are not configured properly.")
         return False
-        
+    FRONTEND_URL = os.getenv("FRONTEND_URL", "https://tickety-v1.vercel.app")
+    
     message = Mail(
         from_email=Email(SENDER_EMAIL, "Tickety 售票通知"),
         to_emails=to_email,
@@ -54,8 +61,12 @@ def send_ticket_alert(to_email: str, ticket_url: str):
             <p>你追蹤的票券頁面偵測到有票可購買！</p>
             <p style="color:#94a3b8;">請盡快前往搶購，票券可能隨時售完。</p>
             <a href="{ticket_url}"
-               style="display:inline-block;margin-top:20px;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:white;padding:14px 28px;border-radius:10px;text-decoration:none;font-weight:600;">
+               style="display:inline-block;margin-top:20px;margin-right:10px;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:white;padding:14px 28px;border-radius:10px;text-decoration:none;font-weight:600;">
                立即前往購票 →
+            </a>
+            <a href="{FRONTEND_URL}"
+               style="display:inline-block;margin-top:20px;background:#1e293b;color:white;padding:14px 28px;border-radius:10px;text-decoration:none;font-weight:600;border:1px solid #334155;">
+               回系統查看狀態
             </a>
             <p style="margin-top:30px;color:#475569;font-size:12px;">此通知由 Tickety 自動發送，任務已自動停止監控。</p>
         </div>

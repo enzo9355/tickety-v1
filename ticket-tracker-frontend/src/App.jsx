@@ -20,7 +20,7 @@ function App() {
   const [concerts, setConcerts] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [visibleToasts, setVisibleToasts] = useState([]);
-  const [heroSearchUrl, setHeroSearchUrl] = useState('');
+
   const [showLoginModal, setShowLoginModal] = useState(false);
   const { user, isAuthenticated, verifyToken, loading: authLoading } = useAuth();
   const [activePanel, setActivePanel] = useState('tasks');
@@ -173,41 +173,6 @@ function App() {
 
       <main className="max-w-container-max mx-auto px-gutter py-lg">
 
-        {/* ── Hero / Search Section ─────────────────────── */}
-        <section className="mb-xl">
-          {/* Search bar card */}
-          <div className="glass-card rounded-xl p-lg flex flex-col md:flex-row items-center gap-md">
-            <div className="relative w-full flex-1">
-              <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
-              <input
-                type="url"
-                placeholder="貼上 tixcraft / KKTIX 購票連結..."
-                value={heroSearchUrl}
-                onChange={e => setHeroSearchUrl(e.target.value)}
-                className="w-full bg-surface-container-low/50 border border-outline/50 rounded-lg py-4 pl-12 pr-4 font-body-md text-body-md focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-colors"
-              />
-            </div>
-            <button
-              className="w-full md:w-auto bg-gradient-to-r from-primary-container to-secondary-container text-white font-label-md text-label-md px-8 py-4 rounded-full hover:shadow-md transition-all whitespace-nowrap cursor-pointer"
-              onClick={() => document.getElementById('task-input-section')?.scrollIntoView({ behavior: 'smooth' })}
-            >
-              開始追蹤
-            </button>
-          </div>
-
-          {/* Tag chips */}
-          <div className="flex gap-sm mt-md overflow-x-auto pb-2 no-scrollbar">
-            {['ITZY 台北', '五月天', '韋禮安'].map(tag => (
-              <button
-                key={tag}
-                onClick={() => document.getElementById('task-input-section')?.scrollIntoView({ behavior: 'smooth' })}
-                className="bg-primary-fixed/30 text-primary-container font-label-sm text-label-sm px-4 py-1 rounded-full whitespace-nowrap cursor-pointer hover:bg-primary-fixed/50 transition-colors shrink-0"
-              >
-                {tag}
-              </button>
-            ))}
-          </div>
-        </section>
 
         {/* ── Two-Column Grid ───────────────────────────── */}
         <ErrorBoundary>
@@ -221,7 +186,7 @@ function App() {
                 onTaskAdded={handleTaskAdded}
                 onTaskSelected={handleTaskSelected}
                 onError={setError}
-                initialUrl={heroSearchUrl}
+                initialUrl=""
               />
             </div>
 

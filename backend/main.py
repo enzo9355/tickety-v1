@@ -113,7 +113,7 @@ async def check_ticket_status(task_id: int, url: str, to_email: str):
 
             # === Pattern 5: Generic buy keywords ===
             if not ticket_found:
-                for kw in ["立即購票", "加入購物車", "選擇座位", "Buy Now"]:
+                for kw in ["立即購票", "加入購物車", "選擇座位", "Buy Now", "熱賣中", "立即訂購", "選購"]:
                     if kw in plain_text:
                         ticket_found = True
                         found_tickets_data.append({
