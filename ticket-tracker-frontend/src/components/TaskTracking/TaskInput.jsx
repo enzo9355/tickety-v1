@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import apiClient from '../../api/client';
+import { useAuth } from '../../contexts/AuthContext';
 
 const steps = [
   { id: 1, title: "票券連結",    shortLabel: "URL" },
@@ -10,6 +11,7 @@ const steps = [
 ];
 
 export default function TaskInput({ onTaskAdded, onError, initialUrl }) {
+  const { user, isAuthenticated } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     url: '',
@@ -28,6 +30,13 @@ export default function TaskInput({ onTaskAdded, onError, initialUrl }) {
       setFormData(prev => ({ ...prev, url: initialUrl }));
     }
   }, [initialUrl]);
+
+  // Auto-fill email when user is logged in
+  useEffect(() => {
+    if (isAuthenticated && user?.email) {
+      setFormData(prev => ({ ...prev, email: user.email }));
+    }
+  }, [isAuthenticated, user]);
 
   const handleLocate = () => {
     if (!navigator.geolocation) {
@@ -107,14 +116,14 @@ export default function TaskInput({ onTaskAdded, onError, initialUrl }) {
       setSubmitState('success');
       setTimeout(() => {
         onTaskAdded(response.data);
-        setFormData({ url: '', email: '', venue: '', departure: '', budget: '', needsAccommodation: false });
+        setFormData({ url: '', email: isAuthenticated && user?.email ? user.email : '', venue: '', departure: '', budget: '', needsAccommodation: false });
         setCurrentStep(1);
         setSubmitState('idle');
       }, 1000);
       
     } catch (error) {
       console.error("Failed to create task", error);
-      const errorMsg = error.response?.data?.detail || error.message || '連線至後端失敗，請確認 API 伺服器是否運行中。';
+      const errorMsg = error.response?.data?.detail || error.message || '建立任務失敗，請稍後再試或確認 API 服務是否正常。';
       onError(`建立任務失敗：${errorMsg}`);
       setSubmitState('idle');
     }
@@ -122,9 +131,9 @@ export default function TaskInput({ onTaskAdded, onError, initialUrl }) {
 
   const getSubmitButtonText = () => {
     switch (submitState) {
-      case 'parsing': return '🔍 解析中...';
-      case 'creating': return '⚙️ 建立任務...';
-      case 'success': return '✅ 監控已啟動';
+      case 'parsing': return '📄 解析中...';
+      case 'creating': return '⚙️ 建立任務中...';
+      case 'success': return '✅ 已啟動監控';
       default: return '🚀 啟動監控';
     }
   };
@@ -205,44 +214,44 @@ export default function TaskInput({ onTaskAdded, onError, initialUrl }) {
             {currentStep === 1 && (
               <div className="flex flex-col gap-4">
                 <div className="relative">
-                  <span className="material-symbols-outlined absolute left-4 top-[14px] text-on-surface-variant text-[18px]">link</span>
+                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px] pointer-events-none">link</span>
                   <input
                     type="url"
                     name="url"
                     value={formData.url}
                     onChange={handleChange}
-                    placeholder="貼上拓元等售票網站網址..."
-                    className="glass-input pl-11 text-lg w-full"
+                    placeholder="貼上拓元或 KKTIX 等售票網站連結..."
+                    className="glass-input pl-10 text-lg w-full"
                     autoFocus
                   />
                 </div>
-                <p className="text-on-surface-variant text-sm m-0">系統將自動解析網頁並抓取活動資訊。</p>
+                <p className="text-on-surface-variant text-sm m-0">支援的售票平台包括拓元、KKTIX 等國內主要票務系統。</p>
               </div>
             )}
 
             {currentStep === 2 && (
               <div className="flex flex-col gap-4">
                 <div className="relative">
-                  <span className="material-symbols-outlined absolute left-4 top-[14px] text-on-surface-variant text-[18px]">location_on</span>
+                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px] pointer-events-none">location_on</span>
                   <input
                     type="text"
                     name="venue"
                     value={formData.venue}
                     onChange={handleChange}
-                    placeholder="目標場館 (選填，若留空將自動解析)"
-                    className="glass-input pl-11 w-full"
+                    placeholder="標場館 (選填，若留空將自動解析)"
+                    className="glass-input pl-10 w-full"
                   />
                 </div>
                 <div className="flex gap-2">
                   <div className="relative flex-1">
-                    <span className="material-symbols-outlined absolute left-4 top-[14px] text-on-surface-variant text-[18px]">location_on</span>
+                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px] pointer-events-none">location_on</span>
                     <input
                       type="text"
                       name="departure"
                       value={formData.departure}
                       onChange={handleChange}
                       placeholder="您的出發地"
-                      className="glass-input pl-11 w-full"
+                      className="glass-input pl-10 w-full"
                     />
                   </div>
                   <button 
@@ -260,14 +269,14 @@ export default function TaskInput({ onTaskAdded, onError, initialUrl }) {
             {currentStep === 3 && (
               <div className="flex flex-col gap-4">
                 <div className="relative">
-                  <span className="material-symbols-outlined absolute left-4 top-[14px] text-on-surface-variant text-[18px]">attach_money</span>
+                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px] pointer-events-none">attach_money</span>
                   <input
                     type="number"
                     name="budget"
                     value={formData.budget}
                     onChange={handleChange}
-                    placeholder="總預算 (TWD)"
-                    className="glass-input pl-11 w-full"
+                    placeholder="住宿預算 (TWD)"
+                    className="glass-input pl-10 w-full"
                   />
                 </div>
                 
@@ -279,24 +288,36 @@ export default function TaskInput({ onTaskAdded, onError, initialUrl }) {
                     onChange={handleChange}
                     className="glass-checkbox"
                   />
-                  <span className="text-base text-on-surface">需要安排周邊住宿推薦</span>
+                  <span className="text-base text-on-surface">需要推薦附近住宿與交通</span>
                 </label>
               </div>
             )}
 
             {currentStep === 4 && (
               <div className="flex flex-col gap-4">
-                <div className="relative">
-                  <span className="material-symbols-outlined absolute left-4 top-[14px] text-on-surface-variant text-[18px]">mail</span>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    placeholder="接收通知的 Email"
-                    className="glass-input pl-11 text-lg w-full"
-                  />
-                </div>
+                {isAuthenticated && user?.email ? (
+                  // Logged-in: show read-only email info card
+                  <div className="glass-input flex items-center gap-3 px-4 py-3 bg-surface-container rounded-xl cursor-default">
+                    <span className="material-symbols-outlined text-primary-container text-[20px]">verified_user</span>
+                    <div className="flex flex-col">
+                      <span className="text-on-surface font-medium text-base">{user.email}</span>
+                      <span className="text-on-surface-variant text-xs">通知將寄送至此 Email</span>
+                    </div>
+                  </div>
+                ) : (
+                  // Not logged-in: show email input
+                  <div className="relative">
+                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px] pointer-events-none">mail</span>
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      placeholder="接收通知的 Email"
+                      className="glass-input pl-10 text-lg w-full"
+                    />
+                  </div>
+                )}
                 <p className="text-on-surface-variant text-sm m-0">當票券狀態改變或開賣時，我們將第一時間寄送 Email 通知您。</p>
               </div>
             )}
