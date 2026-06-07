@@ -125,10 +125,12 @@ async def check_ticket_status(task_id: int, url: str, to_email: str):
         # --- Process results ---
         if ticket_found:
             print(f"[Task {task_id}] 偵測到釋票特徵！寄送通知。")
-            email_service.send_ticket_alert(to_email, url)
-
             db = database.SessionLocal()
             try:
+                user = db.query(database.User).filter(database.User.email == to_email).first()
+                session_token = user.session_token if user else None
+                email_service.send_ticket_alert(to_email, url, session_token)
+                
                 now = datetime.now()
                 if found_tickets_data:
                     for td in found_tickets_data:
@@ -432,13 +434,24 @@ async def create_task(task_data: TaskCreate, request: Request, background_tasks:
         departure=task_data.departure, budget=task_data.budget,
         needs_accommodation=task_data.needsAccommodation, status="監控中"
     )
-    if user:
-        db_task.user_id = user.id
+    if not user:
+        user = db.query(database.User).filter(database.User.email == task_email).first()
+        if not user:
+            user = database.User(email=task_email)
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+            
+    if not user.session_token:
+        user.session_token = secrets.token_urlsafe(32)
+        db.commit()
+
+    db_task.user_id = user.id
     db.add(db_task)
     db.commit()
     db.refresh(db_task)
 
-    background_tasks.add_task(email_service.send_task_created_email, db_task.email, str(db_task.url))
+    background_tasks.add_task(email_service.send_task_created_email, db_task.email, str(db_task.url), user.session_token)
 
     first_delay = random.randint(5, 30)
     scheduler.add_job(

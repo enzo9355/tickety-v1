@@ -28,6 +28,14 @@ function App() {
   // Handle magic link verification from URL
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    
+    const sessionToken = params.get('session');
+    if (sessionToken) {
+      localStorage.setItem('tickety_session_token', sessionToken);
+      window.location.href = window.location.pathname; // Clean URL and reload to apply session
+      return;
+    }
+
     const token = params.get('token');
     if (token) {
       verifyToken(token).then(result => {
