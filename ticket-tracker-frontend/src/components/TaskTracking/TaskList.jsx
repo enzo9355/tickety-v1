@@ -3,35 +3,50 @@ import { AnimatePresence } from 'framer-motion';
 import apiClient from '../../api/client';
 import ShareModal from './ShareModal';
 
-function TaskLogTerminal({ isActive }) {
+const LEVEL_STYLES = {
+  info:    "text-on-surface-variant",
+  warn:    "text-yellow-600",
+  error:   "text-red-500",
+  success: "text-tertiary font-semibold",
+};
+
+function TaskLogTerminal({ taskId, isActive }) {
   const [logs, setLogs] = useState([]);
   const bottomRef = React.useRef(null);
 
   React.useEffect(() => {
-    if (!isActive) return;
-    const now = new Date();
-    setLogs([{ id: Date.now(), time: now.toLocaleTimeString(), text: '啟動任務監控程序...' }]);
-    const interval = setInterval(() => {
-      setLogs(prev => {
-        const t = new Date().toLocaleTimeString();
-        const updated = [...prev, { id: Date.now(), time: t, text: '持續在背景分析網頁內容與售票狀態...' }];
-        return updated.length > 20 ? updated.slice(-20) : updated;
-      });
-    }, 30000);
-    return () => clearInterval(interval);
-  }, [isActive]);
+    if (!taskId) return;
 
-  React.useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [logs]);
-  if (!isActive) return null;
+    const fetchLogs = async () => {
+      try {
+        const res = await apiClient.get(`/api/tasks/${taskId}/logs`);
+        setLogs(res.data || []);
+      } catch { /* backend waking up; silent fail */ }
+    };
+
+    fetchLogs();
+    if (!isActive) return;
+
+    const interval = setInterval(fetchLogs, 8000);
+    return () => clearInterval(interval);
+  }, [taskId, isActive]);
+
+  React.useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [logs]);
 
   return (
-    <div className="mt-3 bg-surface-container-highest/50 rounded p-2 font-mono text-xs text-on-surface-variant h-20 overflow-y-auto">
-      {logs.map(log => (
-        <div key={log.id} className="mb-1 flex gap-2">
-          <span className="opacity-70">[{log.time}]</span>
-          <span className="text-primary">{log.text}</span>
-        </div>
-      ))}
+    <div className="mt-3 bg-surface-container-highest/50 rounded p-2 font-mono text-xs h-24 overflow-y-auto">
+      {logs.length === 0 ? (
+        <span className="text-on-surface-variant opacity-50">等待後端日誌…（重啟後清空）</span>
+      ) : (
+        logs.map((log, i) => (
+          <div key={i} className={`mb-0.5 flex gap-2 ${LEVEL_STYLES[log.level] || LEVEL_STYLES.info}`}>
+            <span className="opacity-60 shrink-0">[{log.time}]</span>
+            <span>{log.message}</span>
+          </div>
+        ))
+      )}
       <div ref={bottomRef} />
     </div>
   );
@@ -194,7 +209,7 @@ export default function TaskList({ tasks, selectedTask, onTaskSelected }) {
 
                   {logExpandedId === task.id && (
                     <div className="animate-fade-in" onClick={e => e.stopPropagation()}>
-                      <TaskLogTerminal isActive={task.status === '監控中'} />
+                      <TaskLogTerminal taskId={task.id} isActive={task.status === '監控中'} />
                     </div>
                   )}
                 </div>

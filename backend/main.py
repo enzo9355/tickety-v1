@@ -19,11 +19,63 @@ import asyncio
 import database
 import email_service
 
+# curl-cffi: impersonates Chrome TLS fingerprint → bypasses Cloudflare JS challenges
+# Falls back to httpx if not installed (non-tixcraft platforms still work fine)
+try:
+    from curl_cffi.requests import AsyncSession as CurlSession
+    HAS_CURL_CFFI = True
+except ImportError:
+    HAS_CURL_CFFI = False
+    print("[Warning] curl-cffi not installed — tixcraft Cloudflare bypass disabled")
+
 scheduler = AsyncIOScheduler()
 task_error_counts = {}
 notifications_cache = []
 
+# In-memory task log: task_id → [{time, level, message}]
+task_logs: dict = {}
+
 MAX_CONCURRENT_TASKS = 5
+
+
+def log_task(task_id: int, message: str, level: str = "info"):
+    """Append a log entry for a task (keeps last 30 entries)."""
+    now = datetime.now().strftime("%H:%M:%S")
+    entry = {"time": now, "level": level, "message": message}
+    if task_id not in task_logs:
+        task_logs[task_id] = []
+    task_logs[task_id].append(entry)
+    task_logs[task_id] = task_logs[task_id][-30:]
+    print(f"[Task {task_id}] {message}")
+
+
+def is_cf_challenge(html: str) -> bool:
+    """Detect Cloudflare JS/managed challenge pages (HTTP 200 but not real content)."""
+    snippet = html[:6000].lower()
+    hits = sum(1 for kw in [
+        "cf-browser-verification", "challenge-form", "just a moment",
+        "checking your browser", "cf_clearance", "turnstile",
+        "please wait while", "enable javascript",
+    ] if kw in snippet)
+    return hits >= 2
+
+
+async def fetch_page(url: str, platform: str, headers: dict) -> tuple[int, str]:
+    """
+    Fetch a ticket page and return (status_code, html).
+
+    tixcraft uses curl-cffi to impersonate Chrome's TLS/HTTP2 fingerprint,
+    which bypasses Cloudflare's bot detection without a real browser.
+    All other platforms use httpx.
+    """
+    if platform == "tixcraft" and HAS_CURL_CFFI:
+        async with CurlSession(impersonate="chrome124") as session:
+            r = await session.get(url, headers=headers, timeout=15, allow_redirects=True)
+            return r.status_code, r.text
+    else:
+        async with httpx.AsyncClient(headers=headers, follow_redirects=True, timeout=15) as client:
+            r = await client.get(url)
+            return r.status_code, r.text
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
@@ -272,42 +324,62 @@ async def check_ticket_status(task_id: int, url: str, to_email: str):
         found_tickets_data = []
 
         platform = detect_platform(url)
+        log_task(task_id, f"開始輪詢 ({platform}) …")
 
         req_headers = build_request_headers(platform)
         fetch_url   = cache_bust_url(url, platform)
 
-        async with httpx.AsyncClient(headers=req_headers, follow_redirects=True, timeout=15) as client:
-            resp = await client.get(fetch_url)
+        status_code, html = await fetch_page(fetch_url, platform, req_headers)
 
-            if resp.status_code in (403, 429):
-                task_error_counts[task_id] = task_error_counts.get(task_id, 0) + 1
-                streak = task_error_counts[task_id]
-                delay  = get_poll_delay(platform, error_streak=streak)
-                print(f"[Task {task_id}] 封鎖 ({resp.status_code}) 第 {streak} 次，退讓 {delay}s。")
-                scheduler.add_job(
-                    check_ticket_status, "date",
-                    run_date=datetime.now() + timedelta(seconds=delay),
-                    args=[task_id, url, to_email],
-                    id=f"task_{task_id}", replace_existing=True
-                )
-                return
+        if status_code in (403, 429):
+            task_error_counts[task_id] = task_error_counts.get(task_id, 0) + 1
+            streak = task_error_counts[task_id]
+            delay  = get_poll_delay(platform, error_streak=streak)
+            log_task(task_id, f"HTTP {status_code} 封鎖（第 {streak} 次），{delay}s 後重試", "warn")
+            scheduler.add_job(
+                check_ticket_status, "date",
+                run_date=datetime.now() + timedelta(seconds=delay),
+                args=[task_id, url, to_email],
+                id=f"task_{task_id}", replace_existing=True
+            )
+            return
 
-            soup = BeautifulSoup(resp.text, "html.parser")
-            title = soup.title.string.strip() if soup.title and soup.title.string else "未知活動"
-            plain_text = soup.get_text(separator=" ")
+        if is_cf_challenge(html):
+            task_error_counts[task_id] = task_error_counts.get(task_id, 0) + 1
+            streak = task_error_counts[task_id]
+            delay  = get_poll_delay(platform, error_streak=streak)
+            log_task(task_id, f"遭到 Cloudflare 挑戰（第 {streak} 次），{delay}s 後重試", "warn")
+            scheduler.add_job(
+                check_ticket_status, "date",
+                run_date=datetime.now() + timedelta(seconds=delay),
+                args=[task_id, url, to_email],
+                id=f"task_{task_id}", replace_existing=True
+            )
+            return
 
-            # Feature 3: platform-specific parsing
-            raw_candidates = parse_tickets(platform, soup, plain_text, resp.text)
+        soup = BeautifulSoup(html, "html.parser")
+        title = soup.title.string.strip() if soup.title and soup.title.string else "未知活動"
+        plain_text = soup.get_text(separator=" ")
 
-            # Feature 2: price filter
-            for td in raw_candidates:
-                if price_in_range(td.get("price"), min_price, max_price):
-                    found_tickets_data.append(td)
+        # Feature 3: platform-specific parsing
+        raw_candidates = parse_tickets(platform, soup, plain_text, html)
 
-            ticket_found = len(found_tickets_data) > 0
+        # Feature 2: price filter
+        for td in raw_candidates:
+            if price_in_range(td.get("price"), min_price, max_price):
+                found_tickets_data.append(td)
+
+        ticket_found = len(found_tickets_data) > 0
+
+        if not ticket_found:
+            log_task(task_id, f"未偵測到符合條件的票券（掃描 {len(plain_text)} 字元）")
 
         if ticket_found:
-            print(f"[Task {task_id}] 偵測到釋票！通知 {to_email}。")
+            summary = "、".join(
+                f"{td.get('zone') or '未知區'} 剩餘 {td.get('remaining', '?')}"
+                for td in found_tickets_data
+            )
+            log_task(task_id, f"🎫 偵測到票券！{summary}", "success")
 
             # Feature 6: notify shared watchers too
             db = database.SessionLocal()
@@ -361,6 +433,7 @@ async def check_ticket_status(task_id: int, url: str, to_email: str):
         # Not found — reschedule with platform-safe delay
         task_error_counts[task_id] = 0
         delay = get_poll_delay(platform)
+        log_task(task_id, f"未偵測到票券 ({platform})，{delay}s 後再檢查")
         print(f"[Task {task_id}] 未偵測到票券 ({platform})，{delay}s 後再檢查。")
         scheduler.add_job(
             check_ticket_status, "date",
@@ -370,7 +443,7 @@ async def check_ticket_status(task_id: int, url: str, to_email: str):
         )
 
     except Exception as e:
-        print(f"[Task {task_id}] 例外: {e}")
+        log_task(task_id, f"例外錯誤：{e}", "error")
         platform_fallback = detect_platform(url)
         scheduler.add_job(
             check_ticket_status, "date",
@@ -671,6 +744,12 @@ def health_check():
 @app.get("/api/notifications")
 def get_notifications():
     return notifications_cache[-20:]
+
+
+@app.get("/api/tasks/{task_id}/logs")
+def get_task_logs(task_id: int):
+    """Return real-time backend poll log for a task (in-memory, resets on restart)."""
+    return task_logs.get(task_id, [])
 
 
 @app.get("/api/tasks/{task_id}/ticket-records")

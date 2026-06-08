@@ -10,3 +10,4 @@ apscheduler
 httpx
 psycopg2-binary
 email-validator
+curl-cffi
