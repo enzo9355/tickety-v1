@@ -185,7 +185,7 @@ export default function TaskInput({ onTaskAdded, onError, initialUrl }) {
               <div className="flex flex-col gap-4">
                 <div className="relative">
                   <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px] pointer-events-none">link</span>
-                  <input type="url" name="url" value={formData.url} onChange={handleChange} placeholder="貼上票務網站連結..." className="glass-input pl-10 text-lg w-full" autoFocus />
+                  <input type="url" name="url" value={formData.url} onChange={handleChange} placeholder="貼上票務網站連結..." className="glass-input text-lg w-full" style={{ paddingLeft: '2.5rem' }} autoFocus />
                 </div>
                 {platformHint && (
                   <div className="flex items-center gap-2 text-sm text-on-surface-variant">
@@ -204,12 +204,12 @@ export default function TaskInput({ onTaskAdded, onError, initialUrl }) {
               <div className="flex flex-col gap-4">
                 <div className="relative">
                   <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px] pointer-events-none">stadium</span>
-                  <input type="text" name="venue" value={formData.venue} onChange={handleChange} placeholder="場館名稱（選填，若留空將自動解析）" className="glass-input pl-10 w-full" />
+                  <input type="text" name="venue" value={formData.venue} onChange={handleChange} placeholder="場館名稱（選填，若留空將自動解析）" className="glass-input w-full" style={{ paddingLeft: '2.5rem' }} />
                 </div>
                 <div className="flex gap-2">
                   <div className="relative flex-1">
                     <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px] pointer-events-none">location_on</span>
-                    <input type="text" name="departure" value={formData.departure} onChange={handleChange} placeholder="您的出發地（用於交通建議）" className="glass-input pl-10 w-full" />
+                    <input type="text" name="departure" value={formData.departure} onChange={handleChange} placeholder="您的出發地（用於交通建議）" className="glass-input w-full" style={{ paddingLeft: '2.5rem' }} />
                   </div>
                   <button type="button" onClick={handleLocate} disabled={isLocating} className="glass-button w-auto bg-surface-container text-secondary shadow-none hover:bg-surface-container-high">
                     {isLocating ? '定位中...' : '📍 定位'}
@@ -224,7 +224,7 @@ export default function TaskInput({ onTaskAdded, onError, initialUrl }) {
                 {/* Accommodation budget */}
                 <div className="relative">
                   <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px] pointer-events-none">hotel</span>
-                  <input type="number" name="budget" value={formData.budget} onChange={handleChange} placeholder="住宿預算 (TWD，選填)" className="glass-input pl-10 w-full" />
+                  <input type="number" name="budget" value={formData.budget} onChange={handleChange} placeholder="住宿預算 (TWD，選填)" className="glass-input w-full" style={{ paddingLeft: '2.5rem' }} />
                 </div>
                 <label className="flex items-center gap-2 cursor-pointer py-1">
                   <input type="checkbox" name="needsAccommodation" checked={formData.needsAccommodation} onChange={handleChange} className="glass-checkbox" />
@@ -239,16 +239,16 @@ export default function TaskInput({ onTaskAdded, onError, initialUrl }) {
                   </div>
                   <div className="flex gap-2 items-center">
                     <div className="relative flex-1">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">NT$</span>
-                      <input type="number" name="minPrice" value={formData.minPrice} onChange={handleChange} placeholder="最低票價" className="glass-input pl-10 w-full text-sm" />
+                      <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[16px] pointer-events-none">payments</span>
+                      <input type="number" name="minPrice" value={formData.minPrice} onChange={handleChange} placeholder="最低票價" className="glass-input w-full text-sm" style={{ paddingLeft: '2.5rem' }} />
                     </div>
                     <span className="text-on-surface-variant">—</span>
                     <div className="relative flex-1">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">NT$</span>
-                      <input type="number" name="maxPrice" value={formData.maxPrice} onChange={handleChange} placeholder="最高票價" className="glass-input pl-10 w-full text-sm" />
+                      <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[16px] pointer-events-none">payments</span>
+                      <input type="number" name="maxPrice" value={formData.maxPrice} onChange={handleChange} placeholder="最高票價" className="glass-input w-full text-sm" style={{ paddingLeft: '2.5rem' }} />
                     </div>
                   </div>
-                  <p className="text-xs text-on-surface-variant m-0">留空代表不限制票價區間</p>
+                  <p className="text-xs text-on-surface-variant m-0">單位 NT$，留空代表不限制票價區間</p>
                 </div>
 
                 {/* Feature 5: Time window */}
@@ -302,7 +302,7 @@ export default function TaskInput({ onTaskAdded, onError, initialUrl }) {
                 ) : (
                   <div className="relative">
                     <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px] pointer-events-none">mail</span>
-                    <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="接收通知的 Email" className="glass-input pl-10 text-lg w-full" />
+                    <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="接收通知的 Email" className="glass-input text-lg w-full" style={{ paddingLeft: '2.5rem' }} />
                   </div>
                 )}
                 {/* Summary */}
