@@ -93,6 +93,22 @@ function App() {
     setSelectedTask(newTask); // Auto select the new task
   };
 
+  // Load existing tasks when authenticated
+  const fetchTasks = useCallback(async () => {
+    try {
+      const res = await apiClient.get('/api/tasks');
+      setTasks(res.data || []);
+    } catch (e) {
+      console.error('Failed to fetch tasks:', e);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!authLoading) {
+      fetchTasks();
+    }
+  }, [isAuthenticated, authLoading, fetchTasks]);
+
   const handleTaskSelected = (task) => {
     setSelectedTask(task);
   };
