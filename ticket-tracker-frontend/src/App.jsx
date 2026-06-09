@@ -90,7 +90,12 @@ function App() {
 
   const handleTaskAdded = (newTask) => {
     setTasks(prev => [newTask, ...prev]);
-    setSelectedTask(newTask); // Auto select the new task
+    setSelectedTask(newTask);
+  };
+
+  const handleTaskDeleted = (taskId) => {
+    setTasks(prev => prev.filter(t => t.id !== taskId));
+    if (selectedTask?.id === taskId) setSelectedTask(null);
   };
 
   // Load existing tasks when authenticated
@@ -209,6 +214,7 @@ function App() {
                 selectedTask={selectedTask}
                 onTaskAdded={handleTaskAdded}
                 onTaskSelected={handleTaskSelected}
+                onTaskDeleted={handleTaskDeleted}
                 onError={setError}
                 initialUrl=""
               />

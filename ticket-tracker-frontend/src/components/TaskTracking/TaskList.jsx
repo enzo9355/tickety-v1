@@ -85,13 +85,28 @@ const PLATFORM_COLORS = {
   '其他': 'bg-gray-100 text-gray-500',
 };
 
-export default function TaskList({ tasks, selectedTask, onTaskSelected }) {
+export default function TaskList({ tasks, selectedTask, onTaskSelected, onTaskDeleted }) {
   const [logExpandedId, setLogExpandedId] = useState(null);
   const [statusFilter, setStatusFilter] = useState('all');
   const [platformFilter, setPlatformFilter] = useState('all');
-  const [shareTask, setShareTask] = useState(null); // Feature 6: task to share
+  const [shareTask, setShareTask] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
 
   const toggleLog = (e, id) => { e.stopPropagation(); setLogExpandedId(prev => prev === id ? null : id); };
+
+  const handleDelete = async (e, taskId) => {
+    e.stopPropagation();
+    if (!window.confirm('確定要停止並刪除此監控任務嗎？')) return;
+    setDeletingId(taskId);
+    try {
+      await apiClient.delete(`/api/tasks/${taskId}`);
+      onTaskDeleted?.(taskId);
+    } catch (err) {
+      alert('刪除失敗，請稍後再試');
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const platforms = [...new Set(tasks.map(t => detectPlatform(t.url)))];
 
@@ -211,6 +226,16 @@ export default function TaskList({ tasks, selectedTask, onTaskSelected }) {
                       className="glass-button flex-1 p-2 text-sm text-center no-underline bg-primary text-white border-none hover:opacity-90 flex items-center justify-center">
                       快速查看
                     </a>
+                    {/* Delete button */}
+                    <button
+                      onClick={e => handleDelete(e, task.id)}
+                      disabled={deletingId === task.id}
+                      className="glass-button p-2 text-sm bg-red-50 text-red-500 shadow-none hover:bg-red-100 border-red-200 flex items-center justify-center"
+                      title="停止並刪除任務">
+                      <span className="material-symbols-outlined text-[16px]">
+                        {deletingId === task.id ? 'hourglass_empty' : 'delete'}
+                      </span>
+                    </button>
                   </div>
 
                   {logExpandedId === task.id && (
