@@ -12,6 +12,7 @@ const LEVEL_STYLES = {
 
 function TaskLogTerminal({ taskId, isActive }) {
   const [logs, setLogs] = useState([]);
+  const [fetchError, setFetchError] = useState(false);
   const bottomRef = React.useRef(null);
 
   React.useEffect(() => {
@@ -21,7 +22,10 @@ function TaskLogTerminal({ taskId, isActive }) {
       try {
         const res = await apiClient.get(`/api/tasks/${taskId}/logs`);
         setLogs(res.data || []);
-      } catch { /* backend waking up; silent fail */ }
+        setFetchError(false);
+      } catch {
+        setFetchError(true);
+      }
     };
 
     fetchLogs();
@@ -37,7 +41,9 @@ function TaskLogTerminal({ taskId, isActive }) {
 
   return (
     <div className="mt-3 bg-surface-container-highest/50 rounded p-2 font-mono text-xs h-24 overflow-y-auto">
-      {logs.length === 0 ? (
+      {fetchError ? (
+        <span className="text-yellow-600">⚠ 無法連線到後端，請確認 API URL 設定正確</span>
+      ) : logs.length === 0 ? (
         <span className="text-on-surface-variant opacity-50">等待後端日誌…（重啟後清空）</span>
       ) : (
         logs.map((log, i) => (

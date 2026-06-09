@@ -671,7 +671,7 @@ def _task_to_dict(t: database.Task) -> dict:
         "email": t.email,
         "status": t.status,
         "createdAt": t.created_at.isoformat() + "Z" if t.created_at else None,
-        "venue": t.departure or "活動場館",
+        "venue": t.venue or "活動場館",
         "minPrice": t.min_price,
         "maxPrice": t.max_price,
         "monitorStart": t.monitor_start,
@@ -931,6 +931,10 @@ async def create_task(
         parsed_venue = task_data.venue.strip()
     else:
         parsed_venue = await detect_venue_from_url(str(task_data.url))
+
+    # Save venue to database
+    db_task.venue = parsed_venue
+    db.commit()
 
     # Google Maps — accommodations & transit (unchanged logic)
     def get_accommodations(venue_name):

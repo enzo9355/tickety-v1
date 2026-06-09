@@ -38,6 +38,7 @@ class Task(Base):
     budget = Column(Integer, nullable=True)
     needs_accommodation = Column(Boolean, default=False)
     status = Column(String, default="監控中")
+    venue = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     # Feature 2: ticket price filter
     min_price = Column(Integer, nullable=True)
@@ -91,6 +92,7 @@ def run_migrations():
         ("tasks", "max_price",     "INTEGER"),
         ("tasks", "monitor_start", "INTEGER"),
         ("tasks", "monitor_end",   "INTEGER"),
+        ("tasks", "venue",         "VARCHAR"),
     ]
     with engine.connect() as conn:
         for table, col, col_type in additions:
