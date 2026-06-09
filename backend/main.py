@@ -457,23 +457,51 @@ async def check_ticket_status(task_id: int, url: str, to_email: str):
 # Venue auto-detection
 # ─────────────────────────────────────────────────────────────
 
+KNOWN_VENUES = [
+    "高雄巨蛋", "台北小巨蛋", "台北大巨蛋", "台北流行音樂中心",
+    "高雄流行音樂中心", "高雄世運主場館", "台北國際會議中心",
+    "新北工商展覽中心", "桃園會展中心", "台中洲際棒球場",
+    "台北體育館", "台北田徑場", "台北市立體育館", "台北小巨蛋",
+    "花博公園", "南港展覽館", "台北世貿", "高雄展覽館",
+    "國立體育大學", "台中洲際", "嘉義棒球場", "澄清湖棒球場",
+]
+
 async def detect_venue_from_url(url: str) -> str:
+    """
+    Fetch the ticket page and extract the venue name.
+    Uses curl-cffi for tixcraft to bypass Cloudflare.
+    Falls back to page title keyword search if not found.
+    """
     fallback = "活動場館"
+    platform = detect_platform(url)
     try:
-        async with httpx.AsyncClient(headers=HEADERS, follow_redirects=True, timeout=10) as client:
-            resp = await client.get(url)
-            if resp.status_code != 200:
-                return fallback
-            text = resp.text[:20000]
-            venues = [
-                "高雄巨蛋", "台北小巨蛋", "台北大巨蛋", "台北流行音樂中心",
-                "高雄流行音樂中心", "高雄世運主場館", "台北國際會議中心",
-                "新北工商展覽中心", "桃園會展中心", "台中洲際棒球場",
-            ]
-            for v in venues:
-                if v in text:
-                    return v
+        headers = build_request_headers(platform)
+        status_code, html = await fetch_page(url, platform, headers)
+
+        if status_code != 200 or is_cf_challenge(html):
             return fallback
+
+        soup = BeautifulSoup(html, "html.parser")
+
+        # 1. Check full page text for known venue names
+        page_text = soup.get_text(separator=" ")
+        for v in KNOWN_VENUES:
+            if v in page_text:
+                return v
+
+        # 2. Try to extract from <title> tag
+        if soup.title and soup.title.string:
+            title = soup.title.string.strip()
+            for v in KNOWN_VENUES:
+                if v in title:
+                    return v
+            # Return cleaned title as fallback if it looks meaningful
+            title_clean = title.replace("| tixcraft", "").replace("| KKTIX", "").strip()
+            if title_clean and title_clean not in ("", "Loading..."):
+                # Truncate to 20 chars as a short venue-like label
+                return title_clean[:30]
+
+        return fallback
     except Exception:
         return fallback
 
