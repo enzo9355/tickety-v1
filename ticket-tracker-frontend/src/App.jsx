@@ -89,6 +89,16 @@ function App() {
   }, []);
 
   const handleTaskAdded = (newTask) => {
+    // Persist accommodations + transits so they survive page refresh
+    if (newTask.id && (newTask.accommodations?.length || newTask.transits?.length)) {
+      try {
+        localStorage.setItem(`tickety_recs_${newTask.id}`, JSON.stringify({
+          accommodations: newTask.accommodations || [],
+          transits:       newTask.transits       || [],
+          venue:          newTask.venue          || '',
+        }));
+      } catch {}
+    }
     setTasks(prev => [newTask, ...prev]);
     setSelectedTask(newTask);
   };
@@ -96,6 +106,7 @@ function App() {
   const handleTaskDeleted = (taskId) => {
     setTasks(prev => prev.filter(t => t.id !== taskId));
     if (selectedTask?.id === taskId) setSelectedTask(null);
+    try { localStorage.removeItem(`tickety_recs_${taskId}`); } catch {}
   };
 
   // Load existing tasks when authenticated
@@ -115,6 +126,17 @@ function App() {
   }, [isAuthenticated, authLoading, fetchTasks]);
 
   const handleTaskSelected = (task) => {
+    // Restore saved recommendations if task came from DB (no accommodations attached)
+    if (!task.accommodations && !task.transits) {
+      try {
+        const saved = localStorage.getItem(`tickety_recs_${task.id}`);
+        if (saved) {
+          const recs = JSON.parse(saved);
+          setSelectedTask({ ...task, ...recs });
+          return;
+        }
+      } catch {}
+    }
     setSelectedTask(task);
   };
 
