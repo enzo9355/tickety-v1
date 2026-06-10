@@ -82,7 +82,7 @@ export default function RecommendationSection({ selectedTask }) {
       animate="visible"
       className="flex flex-col gap-md"
     >
-      {selectedTask?.needsAccommodation && (
+      {(accommodations.length > 0) && (
         <motion.div variants={itemVariants}>
           <div className="flex items-center gap-2 mb-4">
             <h3 className="flex items-center gap-2 text-xl m-0">

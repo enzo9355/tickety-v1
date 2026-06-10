@@ -93,9 +93,10 @@ function App() {
     if (newTask.id && (newTask.accommodations?.length || newTask.transits?.length)) {
       try {
         localStorage.setItem(`tickety_recs_${newTask.id}`, JSON.stringify({
-          accommodations: newTask.accommodations || [],
-          transits:       newTask.transits       || [],
-          venue:          newTask.venue          || '',
+          accommodations:     newTask.accommodations     || [],
+          transits:           newTask.transits           || [],
+          venue:              newTask.venue              || '',
+          needsAccommodation: newTask.needsAccommodation || false,
         }));
       } catch {}
     }

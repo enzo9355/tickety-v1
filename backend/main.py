@@ -745,6 +745,7 @@ def _task_to_dict(t: database.Task) -> dict:
         "status": t.status,
         "createdAt": t.created_at.isoformat() + "Z" if t.created_at else None,
         "venue": t.venue or "活動場館",
+        "needsAccommodation": t.needs_accommodation or False,
         "minPrice": t.min_price,
         "maxPrice": t.max_price,
         "monitorStart": t.monitor_start,
