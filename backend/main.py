@@ -183,9 +183,54 @@ def parse_tickets(platform: str, soup: BeautifulSoup, plain_text: str, raw_html:
 
     # ── tixcraft ──────────────────────────────────────────────
     if platform == "tixcraft":
-        # Pattern: "X seat(s) remaining"
-        for seats in re.findall(r'(\d+)\s*seat\(s\)\s*remaining', plain_text):
-            found.append({"zone": "", "price": 0, "remaining": int(seats)})
+        # tixcraft renders each ticket zone as <a> inside a .zone container.
+        # The link text contains the area name plus a status/remaining hint.
+        # Sold-out zones typically contain "選購一空" / "Sold out" / "已售完".
+        zone_container = soup.select_one(".zone")
+        zone_links = zone_container.select("a") if zone_container else soup.select(".zone a")
+
+        SOLD_OUT_KW = ["選購一空", "已售完", "售完", "Sold out", "sold out", "額滿", "完售"]
+
+        for link in zone_links:
+            text = link.get_text(separator=" ", strip=True)
+            if not text:
+                continue
+
+            # Skip sold-out zones
+            if any(kw in text for kw in SOLD_OUT_KW):
+                continue
+
+            # Try to extract a remaining count if present (e.g. "剩餘 12", "12 seat(s)")
+            remaining = None
+            m = re.search(r'剩餘\s*(\d+)', text)
+            if not m:
+                m = re.search(r'(\d+)\s*seat', text)
+            if m:
+                remaining = int(m.group(1))
+
+            # Try to extract a price (e.g. "NT$3200", "3,200")
+            price = 0
+            pm = re.search(r'(?:NT\$|\$)?\s*([\d,]{3,})', text)
+            if pm:
+                try:
+                    price = int(pm.group(1).replace(",", ""))
+                except ValueError:
+                    price = 0
+
+            # The zone name is the text with price/remaining hints stripped
+            zone_name = re.sub(r'(剩餘\s*\d+|\d+\s*seat\(s\)?|NT\$[\d,]+|【.*?】)', '', text).strip()
+            zone_name = zone_name[:40] if zone_name else "未命名區域"
+
+            found.append({
+                "zone": zone_name,
+                "price": price,
+                "remaining": remaining if remaining is not None else 1,
+            })
+
+        # Fallback: if .zone parsing found nothing, use the old text patterns
+        if not found:
+            for seats in re.findall(r'(\d+)\s*seat\(s\)\s*remaining', plain_text):
+                found.append({"zone": "", "price": 0, "remaining": int(seats)})
         if not found:
             for seats in re.findall(r'剩餘\s*(\d+)', plain_text):
                 found.append({"zone": "", "price": 0, "remaining": int(seats)})
@@ -387,7 +432,7 @@ async def check_ticket_status(task_id: int, url: str, to_email: str):
                 # Get owner's session_token for auto-login link in email
                 owner = db.query(database.User).filter(database.User.email == to_email).first()
                 owner_token = owner.session_token if owner else None
-                email_service.send_ticket_alert(to_email, url, owner_token)
+                email_service.send_ticket_alert(to_email, url, owner_token, zones=found_tickets_data)
 
                 sharings = db.query(database.TaskSharing).filter(
                     database.TaskSharing.task_id == task_id
@@ -396,7 +441,7 @@ async def check_ticket_status(task_id: int, url: str, to_email: str):
                     if s.email != to_email:
                         watcher = db.query(database.User).filter(database.User.email == s.email).first()
                         watcher_token = watcher.session_token if watcher else None
-                        email_service.send_ticket_alert(s.email, url, watcher_token)
+                        email_service.send_ticket_alert(s.email, url, watcher_token, zones=found_tickets_data)
                         print(f"[Task {task_id}] 共享通知 → {s.email}")
             finally:
                 db.close()

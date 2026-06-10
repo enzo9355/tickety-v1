@@ -46,13 +46,38 @@ def send_task_created_email(to_email: str, target_url: str, session_token: str =
         print(f"Failed to send email: {e}")
         return False
 
-def send_ticket_alert(to_email: str, ticket_url: str, session_token: str = None):
+def send_ticket_alert(to_email: str, ticket_url: str, session_token: str = None, zones: list = None):
     if not SENDGRID_API_KEY or not SENDER_EMAIL:
         print("SendGrid credentials are not configured properly.")
         return False
     FRONTEND_URL = os.getenv("FRONTEND_URL", "https://tickety-v1.vercel.app")
     dashboard_url = f"{FRONTEND_URL}/?session={session_token}" if session_token else FRONTEND_URL
-    
+
+    # Build a zone detail block if zone info is available
+    zone_html = ""
+    if zones:
+        rows = ""
+        for z in zones[:10]:  # cap at 10 zones
+            name = z.get("zone") or "未命名區域"
+            remaining = z.get("remaining")
+            price = z.get("price")
+            detail_parts = []
+            if remaining:
+                detail_parts.append(f"剩餘 {remaining} 張")
+            if price:
+                detail_parts.append(f"NT$ {price:,}")
+            detail = "　".join(detail_parts) if detail_parts else "有票"
+            rows += f"""
+            <tr>
+                <td style="padding:8px 12px;border-bottom:1px solid #1e293b;color:#e2e8f0;">{name}</td>
+                <td style="padding:8px 12px;border-bottom:1px solid #1e293b;color:#34d399;text-align:right;">{detail}</td>
+            </tr>"""
+        zone_html = f"""
+        <div style="margin-top:20px;background:#111827;border-radius:10px;padding:8px 4px;">
+            <p style="color:#94a3b8;font-size:13px;margin:8px 12px;">偵測到以下區域有票：</p>
+            <table style="width:100%;border-collapse:collapse;font-size:14px;">{rows}</table>
+        </div>"""
+
     message = Mail(
         from_email=Email(SENDER_EMAIL, "Tickety 售票通知"),
         to_emails=to_email,
@@ -62,6 +87,7 @@ def send_ticket_alert(to_email: str, ticket_url: str, session_token: str = None)
             <h2 style="color:#a78bfa;">🎫 Tickety 釋票通知</h2>
             <p>你追蹤的票券頁面偵測到有票可購買！</p>
             <p style="color:#94a3b8;">請盡快前往搶購，票券可能隨時售完。</p>
+            {zone_html}
             <a href="{ticket_url}"
                style="display:inline-block;margin-top:20px;margin-right:10px;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:white;padding:14px 28px;border-radius:10px;text-decoration:none;font-weight:600;">
                立即前往購票 →
